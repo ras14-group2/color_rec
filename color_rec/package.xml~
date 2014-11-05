@@ -1,0 +1,23 @@
+<package>
+  <name>ras_lab1</name>
+  <version>0.1.0</version>
+  <description>
+    Packages for lab1 of the RAS 2014 course.
+  </description>
+  <license>BSD</license>
+
+  <url>http://wiki.ros.org/ras_lab1</url>
+
+  <author email="fevb@kth.se">Francisco Vina</author>
+  <author email="raambrus@kth.se">Rares Ambrus</author>
+  <maintainer email="fevb@kth.se">Francisco Vina</maintainer>
+  <maintainer email="raambrus@kth.se">Rares Ambrus</maintainer>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <run_depend>std_msgs</run_depend>
+
+  <export>
+    <metapackage/>
+  </export>
+</package>

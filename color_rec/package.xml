@@ -1,0 +1,20 @@
+<package>
+  <name>color_rec</name>
+  <version>0.1.0</version>
+  <description>
+    Packages for color_rec of the RAS 2014 course.
+  </description>
+  <license>BSD</license>
+
+
+  <author email="pedreira@kth.se">Carlos Pedreira</author>
+  <maintainer email="pedreira@kth.se">Carlos Pedreira</maintainer>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <run_depend>std_msgs</run_depend>
+
+  <export>
+    <metapackage/>
+  </export>
+</package>
