@@ -1,6 +1,7 @@
 #include "ros/ros.h"
 #include "std_msgs/Float64.h"
 #include "std_msgs/Int32.h"
+#include "std_msgs/String.h"
 #include <sstream>
 #include <opencv2/core/core.hpp>
 #include <opencv2/opencv.hpp>
@@ -26,7 +27,7 @@ private:
 
 public:
 
-	cv::Mat hsv, imgThresholded[2];
+	cv::Mat hsv, imgThresholded[8];
 	int iLowH;
 	int iHighH;
 
@@ -36,38 +37,24 @@ public:
 	int iLowV;
 	int iHighV;
 
-	cv::Moments oMoments[2];
+	cv::Moments oMoments[8];
 
-	double dM01[2];
-	double dM10[2];
-	double dArea[2];
+	double dM01[8];
+	double dM10[8];
+	double dArea[8];
 
-	int posX[2];
-	int posY[2];
+	int posX[8];
+	int posY[8];
 
 	objcolor()
 	: it_(n_), iLowH(0), iHighH(179), iLowS(0), iHighS(255), iLowV(0), iHighV(255)
 	{
+		// Subscribe to input video feed and publish output video feed
+		image_sub_ = it_.subscribe("camera/rgb/image_raw", 1, &objcolor::imageCb, this); // /camera/image_raw
+		image_pub_ = it_.advertise("/image_converter/output_video", 1);
 
-
-// Subscribe to input video feed and publish output video feed
-			image_sub_ = it_.subscribe("camera/rgb/image_raw", 1, &objcolor::imageCb, this); // /camera/image_raw
-			image_pub_ = it_.advertise("/image_converter/output_video", 1);
-
-	cv::namedWindow(OPENCV_WINDOW);
-
-	cv::namedWindow("Control", CV_WINDOW_AUTOSIZE); //create a window called "Control"
-
-	//Create trackbars in "Control" window
-	cvCreateTrackbar("LowH", "Control", &iLowH, 179); //Hue (0 - 179)
-	cvCreateTrackbar("HighH", "Control", &iHighH, 179);
-
-	cvCreateTrackbar("LowS", "Control", &iLowS, 255); //Saturation (0 - 255)
-	cvCreateTrackbar("HighS", "Control", &iHighS, 255);
-
-	cvCreateTrackbar("LowV", "Control", &iLowV, 255); //Value (0 - 255)
-	cvCreateTrackbar("HighV", "Control", &iHighV, 255);
-}
+		cv::namedWindow(OPENCV_WINDOW);
+	}
 
 	~objcolor()
 	{
@@ -76,6 +63,8 @@ public:
 
 	void imageCb(const sensor_msgs::ImageConstPtr& msg)
 	{
+		static const std::string color[] = {"Yellow", "Orange", "Light Green", "Green", "Light Blue", "Blue", "Purple", "Red"}; // Colors;
+
 		cv_bridge::CvImagePtr cv_ptr;
 		try
 		{
@@ -89,48 +78,56 @@ public:
 
 		cvtColor(cv_ptr->image, hsv, CV_BGR2HSV);
 
-		//inRange(hsv, cv::Scalar(iLowH, iLowS, iLowV), cv::Scalar(iHighH, iHighS, iHighV), imgThresholded); //Threshold the image
 
-		inRange(hsv, cv::Scalar(0, 159, 190), cv::Scalar(22, 255, 255), imgThresholded[0]); //Threshold the image
-		inRange(hsv, cv::Scalar(40, 110, 80), cv::Scalar(60, 255, 140), imgThresholded[1]); //Threshold the image
+		inRange(hsv, cv::Scalar(17, 140, 200), cv::Scalar(38, 255, 255), imgThresholded[0]); //Threshold the image Yellow
+		inRange(hsv, cv::Scalar(0, 130, 200), cv::Scalar(16, 255, 255), imgThresholded[1]); //Threshold the image Orange
+		inRange(hsv, cv::Scalar(30, 170, 142), cv::Scalar(50, 255, 255), imgThresholded[2]); //Threshold the image L Green
+		inRange(hsv, cv::Scalar(40, 110, 80), cv::Scalar(75, 255, 140), imgThresholded[3]); //Threshold the image Green
+		inRange(hsv, cv::Scalar(90, 110, 150), cv::Scalar(110, 230, 230), imgThresholded[4]); //Threshold the image L Blue
+		inRange(hsv, cv::Scalar(105, 100, 80), cv::Scalar(115, 180, 165), imgThresholded[5]); //Threshold the image Blue
+		inRange(hsv, cv::Scalar(120, 90, 80), cv::Scalar(160, 255, 255), imgThresholded[6]); //Threshold the image Purple
+		inRange(hsv, cv::Scalar(169, 255, 110), cv::Scalar(179, 255, 255), imgThresholded[7]); //Threshold the image Red
 
-		//Calculate the moments of the thresholded image
-		oMoments[0] = moments(imgThresholded[0]);
-		oMoments[1] = moments(imgThresholded[1]);
+		for(int i=0; i<8 ; i++){
 
-		dM01[0] = oMoments[0].m01;
-		dM10[0] = oMoments[0].m10;
-		dArea[0] = oMoments[0].m00;
+			//morphological opening (removes small objects from the foreground)
+			erode(imgThresholded[i], imgThresholded[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)) );
+			dilate( imgThresholded[i], imgThresholded[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)) );
 
-		dM01[1] = oMoments[1].m01;
-		dM10[1] = oMoments[1].m10;
-		dArea[1] = oMoments[1].m00;
+			//morphological closing (fill small holes in the foreground)
+			dilate( imgThresholded[i], imgThresholded[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)) );
+			erode(imgThresholded[i], imgThresholded[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)) );
 
-		if (dArea[0] > 10000 || dArea[1] > 10000)
-		 {
-			//calculate the position of the object
-			posX[0] = dM10[0] / dArea[0];
-			posY[0] = dM01[0] / dArea[0];
-			posX[1] = dM10[1] / dArea[1];
-			posY[1] = dM01[1] / dArea[1];
+			//Calculate the moments of the thresholded image
+			oMoments[i] = moments(imgThresholded[i]);
 
-			if (posX[1] >= 0 && posY[1] >= 0)
+			dM01[i] = oMoments[i].m01;
+			dM10[i] = oMoments[i].m10;
+			dArea[i] = oMoments[i].m00;
+
+			if (dArea[i] > 10000)
 			{
-				// Draw an example circle on the video stream
-				if (cv_ptr->image.rows > 60 && cv_ptr->image.cols > 60){
-					cv::circle(cv_ptr->image, cv::Point(posX[0], posY[0]), 10, CV_RGB(255,0,0));
-					cv::circle(cv_ptr->image, cv::Point(posX[1], posY[1]), 10, CV_RGB(0,0,255));
+				//calculate the position of the object
+				posX[i] = dM10[i] / dArea[i];
+				posY[i] = dM01[i] / dArea[i];
+
+
+				if (posX[i] >= 0 && posY[i] >= 0)
+				{
+					// Draw an example circle on the video stream
+					if (cv_ptr->image.rows > 60 && cv_ptr->image.cols > 60)
+					{
+						cv::circle(cv_ptr->image, cv::Point(posX[i], posY[i]), 10, CV_RGB(255,0,0));
+						ROS_INFO("Color detected = %s \n", color[i].c_str());
+					}
 				}
 			}
-
-		 }
-
-
+		}
 
 		// Update GUI Window
 		cv::imshow(OPENCV_WINDOW, cv_ptr->image);
 		cv::imshow("HSV",hsv);
-		cv::imshow("Image Thresholed",imgThresholded[0]);
+		//cv::imshow("Image Thresholed",imgThresholded[0]);
 		cv::waitKey(3);
 
 		// Output modified video stream
@@ -150,7 +147,6 @@ int main(int argc, char **argv)
   while (ros::ok())
 	{
 		ros::spinOnce();
-		//objcolor_node.publish();
 		loop_rate.sleep();
   }
 
