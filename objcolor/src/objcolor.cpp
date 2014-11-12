@@ -6,7 +6,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/opencv.hpp>
 #include <sensor_msgs/Image.h>
-#include <robo_globals.h>
+//#include <robo_globals.h>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
@@ -142,7 +142,7 @@ int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "image_converter");
 	objcolor objcolor_node;
-	ros::Rate loop_rate(CTRL_FREQ);
+    ros::Rate loop_rate(10);
 
   while (ros::ok())
 	{
