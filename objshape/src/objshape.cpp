@@ -6,7 +6,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/opencv.hpp>
 #include <sensor_msgs/Image.h>
-//#include <robo_globals.h>
+#include <robo_globals.h>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
@@ -61,7 +61,7 @@ private:
 
 public:
 
-    cv::Mat hsv, imgThresholded[6],imgThresholded_new[8], dst;
+	cv::Mat hsv, imgThresholded[6],imgThresholded_new[8], dst;
 	int iLowH;
 	int iHighH;
 
@@ -91,18 +91,17 @@ public:
 		image_sub_ = it_.subscribe("camera/rgb/image_raw", 1, &objshape::imageCb, this); // /camera/image_raw
 		image_pub_ = it_.advertise("/image_converter/output_video", 1);
 
-//		cv::namedWindow(OPENCV_WINDOW);
+		//	cv::namedWindow(OPENCV_WINDOW);
 	}
 
 	~objshape()
 	{
-//		cv::destroyWindow(OPENCV_WINDOW);
+		//	cv::destroyWindow(OPENCV_WINDOW);
 	}
 
 	void imageCb(const sensor_msgs::ImageConstPtr& msg)
 	{
-//		static const std::string color[] = {"Yellow", "Orange", "Light Green", "Green", "Blue", "Blue", "Purple", "Red"}; // Colors;
-        static const std::string color[] = {"Yellow", "Orange", "Green", "Blue", "Purple", "Red"}; // Colors;
+		static const std::string color[] = {"Yellow", "Orange", "Green", "Blue", "Purple", "Red"}; // Colors;
 		static const std::string shape[] = {"Cube", "Ball", "Cylinder", "Triangle", "Patric", "Cross"}; // Shapes;
 
 		cv_bridge::CvImagePtr cv_ptr;
@@ -118,265 +117,186 @@ public:
 
 		cvtColor(cv_ptr->image, hsv, CV_BGR2HSV);
 
-		inRange(hsv, cv::Scalar(17, 140, 200), cv::Scalar(38, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
+		inRange(hsv, cv::Scalar(13, 148, 110), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
 		inRange(hsv, cv::Scalar(0, 170, 170), cv::Scalar(10, 255, 255), imgThresholded_new[1]); //Threshold the image Orange
-		inRange(hsv, cv::Scalar(30, 170, 142), cv::Scalar(50, 255, 255), imgThresholded_new[2]); //Threshold the image L Green
-		inRange(hsv, cv::Scalar(40, 110, 80), cv::Scalar(75, 255, 140), imgThresholded_new[3]); //Threshold the image Green
-		inRange(hsv, cv::Scalar(90, 110, 150), cv::Scalar(110, 230, 230), imgThresholded_new[4]); //Threshold the image L Blue
-		inRange(hsv, cv::Scalar(105, 100, 80), cv::Scalar(115, 180, 165), imgThresholded_new[5]); //Threshold the image Blue
-		inRange(hsv, cv::Scalar(120, 90, 80), cv::Scalar(160, 255, 255), imgThresholded_new[6]); //Threshold the image Purple
-		inRange(hsv, cv::Scalar(160, 150, 110), cv::Scalar(179, 255, 255), imgThresholded_new[7]); //Threshold the image Red
+		inRange(hsv, cv::Scalar(30, 110, 80), cv::Scalar(75, 255, 255), imgThresholded_new[2]); //Threshold the image Green
+		inRange(hsv, cv::Scalar(90, 100, 80), cv::Scalar(115, 255, 255), imgThresholded_new[3]); //Threshold the image Blue
+		inRange(hsv, cv::Scalar(120, 90, 80), cv::Scalar(160, 255, 255), imgThresholded_new[4]); //Threshold the image Purple
+		inRange(hsv, cv::Scalar(160, 130, 110), cv::Scalar(179, 255, 240), imgThresholded_new[5]); //Threshold the image Red
 
-        if(count < 6)
+		if(count < 6)
 		{
-//			for(int i=0; i<8 ; i++)
-//			{
-//				if(count==0)
-//				{
-//					imgThresholded[i] = imgThresholded_new[i];
-//				}else{
-//					cv::add(imgThresholded_new[i], imgThresholded[i], imgThresholded[i]);
-//				}
-//			}
-            if(count == 0)
-            {
-                imgThresholded[0] = imgThresholded_new[0]; //Yellow
-                imgThresholded[1] = imgThresholded_new[1]; //Orange
-                cv::add(imgThresholded_new[2], imgThresholded_new[3], imgThresholded[2]); //Green
-                cv::add(imgThresholded_new[4], imgThresholded_new[5], imgThresholded[3]);//Blue
-                imgThresholded[4] = imgThresholded_new[6]; //Purple
-                imgThresholded[5] = imgThresholded_new[7]; //Red
-            }
-            else
-            {
-                cv::add(imgThresholded_new[0], imgThresholded[0], imgThresholded[0]); //Yellow
-                cv::add(imgThresholded_new[1], imgThresholded[1], imgThresholded[1]); //Orange
-                cv::add(imgThresholded_new[2], imgThresholded[2], imgThresholded[2]); //Green
-                cv::add(imgThresholded_new[3], imgThresholded[2], imgThresholded[2]); //Green
-                cv::add(imgThresholded_new[4], imgThresholded[3], imgThresholded[3]); //Blue
-                cv::add(imgThresholded_new[5], imgThresholded[3], imgThresholded[3]); //Blue
-                cv::add(imgThresholded_new[6], imgThresholded[4], imgThresholded[4]); //Purple
-                cv::add(imgThresholded_new[7], imgThresholded[5], imgThresholded[5]); //Red
-            }
+			for(int i=0; i<6 ; i++)
+			{
+				if(count==0)
+				{
+					imgThresholded[i] = imgThresholded_new[i];
+				}else{
+					cv::add(imgThresholded_new[i], imgThresholded[i], imgThresholded[i]);
+				}
+			}
 			count++;
 		}
 
 		dst = cv_ptr->image.clone();
 
-        if(count==6)
+		if(count==6)
 		{
 			count = 0;
 
-            for(int i=0; i<6 ; i++){
+			for(int i=0; i<6 ; i++){
 
 				//morphological opening (removes small objects from the foreground)
-                erode(imgThresholded[i], imgThresholded[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
-                dilate( imgThresholded[i], imgThresholded[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
+				erode(imgThresholded[i], imgThresholded[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
+				dilate( imgThresholded[i], imgThresholded[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
 
 				//morphological closing (fill small holes in the foreground)
-                dilate( imgThresholded[i], imgThresholded[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
-                erode(imgThresholded[i], imgThresholded[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
+				dilate( imgThresholded[i], imgThresholded[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
+				erode(imgThresholded[i], imgThresholded[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
 
-//				std::vector<cv::Vec4i> hierarchy;
 				// Find contours
 				std::vector<std::vector<cv::Point> > contours;
-                cv::findContours(imgThresholded[i].clone() , contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+				cv::findContours(imgThresholded[i].clone() , contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
 
 				std::vector<cv::Point> approx;
 
 
-                if(color[i].compare("Orange") != 0 && color[i].compare("Purple") != 0)
-                {
-//                    ROS_INFO("%lu %s objects detected", contours.size(), color[i].c_str());
-                    for (int k = 0; k < contours.size(); k++)
-                    {
-                        //                    ROS_INFO("new iteration, obj = \"\"");
+				if(color[i].compare("Orange") != 0 && color[i].compare("Purple") != 0)
+				{
 
-                        obj = "";
-                        // Approximate contour with accuracy proportional
-                        // to the contour perimeter
-                        cv::approxPolyDP(cv::Mat(contours[k]), approx, cv::arcLength(cv::Mat(contours[k]), true)*0.02, true);
+					for (int k = 0; k < contours.size(); k++)
+					{
+						obj = "";
+						// Approximate contour with accuracy proportional
+						// to the contour perimeter
+						cv::approxPolyDP(cv::Mat(contours[k]), approx, cv::arcLength(cv::Mat(contours[k]), true)*0.02, true);
 
-                        // Skip small or non-convex objects
-                        if (std::fabs(cv::contourArea(contours[k])) < 1000 || std::fabs(cv::contourArea(contours[k])) > 10000|| approx.size() < 3 || !cv::isContourConvex(approx))
-                        {
-                            //						if(!cv::isContourConvex(approx))
-                            //						{
-                            //							ROS_INFO("non convex object detected");
-                            //						}
-                            continue;
-                        }
+						// Skip small or non-convex objects
+						if (std::fabs(cv::contourArea(contours[k])) < 1000 || std::fabs(cv::contourArea(contours[k])) > 10000|| approx.size() < 3 || !cv::isContourConvex(approx))
+						{
+							continue;
+						}
 
-                        // iterate through all the top-level contours,
-                        // draw each connected component with its own random color
-                        //					int idx = 0;
-                        //					for( ; idx >= 0; idx = hierarchy[idx][0] )
-                        //					{
-                        //						cv::Scalar color( rand()&255, rand()&255, rand()&255 );
-                        //						cv::drawContours( dst, contours, idx, color, 5, 8, hierarchy );
-                        //					}
-                        //                    cv::Scalar randcolor( rand()&255, rand()&255, rand()&255 );
-                        //                    cv::drawContours(dst, contours, k, randcolor, 5, 8);
-                        for(size_t j = 0; j < approx.size() - 1; j++){
-                            cv::line(dst, approx[j], approx[j+1], cv::Scalar(0, 0, 0), 3);
-                        }
-                        cv::line(dst, approx[approx.size()-1], approx[0], cv::Scalar(0, 0, 0), 3);
+						for(size_t j = 0; j < approx.size() - 1; j++){
+							cv::line(dst, approx[j], approx[j+1], cv::Scalar(0, 0, 0), 3);
+						}
 
-                        // Number of vertices of polygonal curve
-                        int vtc = approx.size();
+						cv::line(dst, approx[approx.size()-1], approx[0], cv::Scalar(0, 0, 0), 3);
 
-                        // Get the cosines of all corners
-                        std::vector<double> cos;
-                        for (int j = 2; j < vtc+1; j++)
-                            cos.push_back(angle(approx[j%vtc], approx[j-2], approx[j-1]));
+						// Number of vertices of polygonal curve
+						int vtc = approx.size();
 
-                        // Sort ascending the cosine values
-                        std::sort(cos.begin(), cos.end());
+						// Get the cosines of all corners
+						std::vector<double> cos;
+						for (int j = 2; j < vtc+1; j++)
+							cos.push_back(angle(approx[j%vtc], approx[j-2], approx[j-1]));
 
-                        // Get the lowest and the highest cosine
-                        double mincos = cos.front();
-                        double maxcos = cos.back();
+						// Sort ascending the cosine values
+						std::sort(cos.begin(), cos.end());
 
-                        //                    ROS_INFO("printed contour - vertices: %lu, mincos: %f, maxcos: %f, area: %f",
-                        //                             approx.size(),
-                        //                             mincos,
-                        //                             maxcos,
-                        //                             std::fabs(cv::contourArea(contours[k])));
+						// Get the lowest and the highest cosine
+						double mincos = cos.front();
+						double maxcos = cos.back();
 
-                        if (approx.size() == 3 || (approx.size() == 5 && mincos > -0.8))
-                        {
-                            obj = "Triangle";
-                            setLabel(dst, obj, contours[k]);    // Triangles
-                        }
-                        else if (approx.size() >= 4 && approx.size() <= 6)
-                        {
-                            //                        // Number of vertices of polygonal curve
-                            //                        int vtc = approx.size();
+						if (approx.size() == 3 || (approx.size() == 5 && mincos > -0.8))
+						{
+							obj = "Triangle";
+							setLabel(dst, obj, contours[k]);    // Triangles
+						}
+						else if (approx.size() >= 4 && approx.size() <= 6)
+						{
+							// Use the degrees obtained above and the number of vertices
+							// to determine the shape of the contour
+							if (mincos >= -0.1 && maxcos <= 0.3)
+							{
+								obj = "Cube";
+								setLabel(dst, obj, contours[k]);
+							}
+							else if (vtc == 6 && mincos >= -0.93 && maxcos <= -0.34)
+							{
+								obj = "Cube";
+								setLabel(dst, obj, contours[k]);
+							}
+							else if (vtc == 6 && mincos >= -0.55 && maxcos <= -0.45)
+							{
+								obj = "Cube";
+								setLabel(dst, obj, contours[k]);
+							}
+						}
+						else
+						{
+							// Detect and label circles
+							double area = cv::contourArea(contours[k]);
+							cv::Rect r = cv::boundingRect(contours[k]);
+							int radius = r.width / 2;
 
-                            //                        // Get the cosines of all corners
-                            //                        std::vector<double> cos;
-                            //                        for (int j = 2; j < vtc+1; j++)
-                            //                            cos.push_back(angle(approx[j%vtc], approx[j-2], approx[j-1]));
+							if (std::abs(1 - ((double)r.width / r.height)) <= 0.5 &&
+							std::abs(1 - (area / (CV_PI * std::pow(radius, 2)))) <= 0.5)
+							{
+								obj = "Ball";
+								setLabel(dst, obj, contours[k]);
+							}
+						}
+						//Calculate the moments of the thresholded image
+						oMoments[i] = moments(imgThresholded[i]);
 
-                            //                        // Sort ascending the cosine values
-                            //                        std::sort(cos.begin(), cos.end());
+						dM01[i] = oMoments[i].m01;
+						dM10[i] = oMoments[i].m10;
+						dArea[i] = oMoments[i].m00;
 
-                            //                        // Get the lowest and the highest cosine
-                            //                        double mincos = cos.front();
-                            //                        double maxcos = cos.back();
+						if (dArea[i] > 10000 && obj.compare("")!=0)
+						{
+							//calculate the position of the object
+							posX[i] = dM10[i] / dArea[i];
+							posY[i] = dM01[i] / dArea[i];
 
-                            // Use the degrees obtained above and the number of vertices
-                            // to determine the shape of the contour
-                            if (mincos >= -0.1 && maxcos <= 0.3)
-                            {
-                                obj = "Cube";
-                                setLabel(dst, obj, contours[k]);
-                            }
-                            else if (vtc == 6 && mincos >= -0.93 && maxcos <= -0.34)
-                            {
-                                obj = "Cube";
-                                setLabel(dst, obj, contours[k]);
-                            }
-                            else if (vtc == 6 && mincos >= -0.55 && maxcos <= -0.45)
-                            {
-                                obj = "Cube";
-                                setLabel(dst, obj, contours[k]);
-                            }
-                        }
-                        else
-                        {
-                            // Detect and label circles
-                            double area = cv::contourArea(contours[k]);
-                            cv::Rect r = cv::boundingRect(contours[k]);
-                            int radius = r.width / 2;
+							if (posX[i] >= 0 && posY[i] >= 0)
+							{
+								if(color[i].compare("Green")==0 && obj.compare("Ball")==0)
+									obj = "Cylinder";
+								else if(color[i].compare("Blue")==0 && obj.compare("Triangle")==0)
+									obj = "Triangle";
+								else if(obj.compare("Triangle")==0 && color[i].compare("Blue") != 0)
+								{
+									obj = "Cube";
+								}
 
-                            if (std::abs(1 - ((double)r.width / r.height)) <= 0.4 &&
-                                    std::abs(1 - (area / (CV_PI * std::pow(radius, 2)))) <= 0.4)
-                            {
-                                obj = "Ball";
-                                setLabel(dst, obj, contours[k]);
-                                //                            ROS_INFO("set obj to ball");
-                            }
-                        }
-                        //                    ROS_INFO("obj at end of loop: %s", obj.c_str());
-                        //}
-                        //                ROS_INFO("obj after loop: %s", obj.c_str());
+								ROS_INFO("Object detected = %s %s \n", color[i].c_str(), obj.c_str());
 
-                        //Calculate the moments of the thresholded image
-                        oMoments[i] = moments(imgThresholded[i]);
+							}
+						}
+					}//end of loop over all contours
+				}
+				else //-->(color[i].compare("Orange") == 0 || color[i].compare("Purple") == 0)
+				{
+					//Calculate the moments of the thresholded image
+					oMoments[i] = moments(imgThresholded[i]);
 
-                        dM01[i] = oMoments[i].m01;
-                        dM10[i] = oMoments[i].m10;
-                        dArea[i] = oMoments[i].m00;
+					dM01[i] = oMoments[i].m01;
+					dM10[i] = oMoments[i].m10;
+					dArea[i] = oMoments[i].m00;
 
-                        //                ROS_INFO("area: %f, obj: %s", dArea[i], obj.c_str());
+					if (dArea[i] > 10000)
+					{
 
-                        if (dArea[i] > 10000 && obj.compare("")!=0)
-                        {
-                            //calculate the position of the object
-                            posX[i] = dM10[i] / dArea[i];
-                            posY[i] = dM01[i] / dArea[i];
+						if(color[i].compare("Orange")==0)
+						{
+							obj = "Patrick";
+						}
+						else{
+							obj = "Cross";
+						}
+						ROS_INFO("Object detected = %s %s \n", color[i].c_str(), obj.c_str());
+					}
+				}//end of distinguish between orange/purple and other colors
+			}//end of loop over all colors
+		} //end of if(count==6)
 
-                            //                    ROS_INFO("posX: %d, posY: %d", posX[i], posY[i]);
-
-
-                            if (posX[i] >= 0 && posY[i] >= 0)
-                            {
-                                // Draw an example circle on the video stream
-                                //					if (cv_ptr->image.rows > 60 && cv_ptr->image.cols > 60)
-                                //					{
-                                //						cv::circle(cv_ptr->image, cv::Point(posX[i], posY[i]), 10, CV_RGB(255,0,0));
-                                //						ROS_INFO("Color detected = %s \n", color[i].c_str());
-                                if(color[i].compare("Green")==0 && obj.compare("Ball")==0)
-                                    obj = "Cylinder";
-                                else if(color[i].compare("Blue")==0 && obj.compare("Triangle")==0)
-                                    obj = "Triangle";
-                                else if(obj.compare("Triangle")==0 && color[i].compare("Blue") != 0)
-                                {
-                                    obj = "Cube";
-                                }
-
-                                ROS_INFO("Object detected = %s %s \n", color[i].c_str(), obj.c_str());
-
-                                //					}
-                            }
-                        }
-                    }//end of loop over all contours
-                }
-                else //-->(color[i].compare("Orange") == 0 || color[i].compare("Purple") == 0)
-                {
-//                    ROS_INFO("orange or purple detected");
-                    //Calculate the moments of the thresholded image
-                    oMoments[i] = moments(imgThresholded[i]);
-
-                    dM01[i] = oMoments[i].m01;
-                    dM10[i] = oMoments[i].m10;
-                    dArea[i] = oMoments[i].m00;
-
-                    //                ROS_INFO("area: %f, obj: %s", dArea[i], obj.c_str());
-
-//                    ROS_INFO("area: %f", dArea[i]);
-                    if (dArea[i] > 10000)
-                    {
-
-                        if(color[i].compare("Orange")==0)
-                        {
-                            obj = "Patrick";
-                        }
-                        else{
-                            obj = "Cross";
-                        }
-                        ROS_INFO("Object detected = %s %s \n", color[i].c_str(), obj.c_str());
-                    }
-                }//end of distinguish between orange/purple and other colors
-            }//end of loop over all colors
-        } //end of if(count==6)
-
-		// Update GUI Window
-//		cv::imshow(OPENCV_WINDOW, cv_ptr->image);
-		//cv::imshow("HSV",hsv);
+		//	Update GUI Window
+		//	cv::imshow(OPENCV_WINDOW, cv_ptr->image);
+		//	cv::imshow("HSV",hsv);
 		cv::imshow("dst",dst);
-        cv::imshow("Image Thresholded",imgThresholded[1]);
+		cv::imshow("Image Thresholded",imgThresholded[5]);
 		cv::waitKey(3);
 
 		// Output modified video stream
@@ -388,7 +308,7 @@ int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "image_converter");
 	objshape objshape_node;
-    ros::Rate loop_rate(10*2);
+	ros::Rate loop_rate(10*5);
 
 	while (ros::ok())
 	{
