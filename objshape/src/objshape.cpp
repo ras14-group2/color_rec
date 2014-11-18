@@ -117,6 +117,8 @@ public:
 
 		cvtColor(cv_ptr->image, hsv, CV_BGR2HSV);
 
+		cv::medianBlur(hsv,hsv,5);
+
 		inRange(hsv, cv::Scalar(13, 148, 110), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
 		inRange(hsv, cv::Scalar(0, 170, 170), cv::Scalar(10, 255, 255), imgThresholded_new[1]); //Threshold the image Orange
 		inRange(hsv, cv::Scalar(30, 110, 80), cv::Scalar(75, 255, 255), imgThresholded_new[2]); //Threshold the image Green
@@ -128,6 +130,14 @@ public:
 		{
 			for(int i=0; i<6 ; i++)
 			{
+//				//morphological opening (removes small objects from the foreground)
+//				erode(imgThresholded_new[i], imgThresholded_new[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
+//				dilate( imgThresholded_new[i], imgThresholded_new[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
+
+//				//morphological closing (fill small holes in the foreground)
+//				dilate( imgThresholded_new[i], imgThresholded_new[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
+//				erode(imgThresholded_new[i], imgThresholded_new[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
+
 				if(count==0)
 				{
 					imgThresholded[i] = imgThresholded_new[i];
@@ -145,14 +155,6 @@ public:
 			count = 0;
 
 			for(int i=0; i<6 ; i++){
-
-				//morphological opening (removes small objects from the foreground)
-				erode(imgThresholded[i], imgThresholded[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
-				dilate( imgThresholded[i], imgThresholded[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
-
-				//morphological closing (fill small holes in the foreground)
-				dilate( imgThresholded[i], imgThresholded[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
-				erode(imgThresholded[i], imgThresholded[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
 
 				// Find contours
 				std::vector<std::vector<cv::Point> > contours;
@@ -294,9 +296,10 @@ public:
 
 		//	Update GUI Window
 		//	cv::imshow(OPENCV_WINDOW, cv_ptr->image);
-		//	cv::imshow("HSV",hsv);
+		cv::imshow("HSV",hsv);
 		cv::imshow("dst",dst);
 		cv::imshow("Image Thresholded",imgThresholded[5]);
+		cv::imshow("Yellow",imgThresholded[0]);
 		cv::waitKey(3);
 
 		// Output modified video stream
