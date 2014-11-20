@@ -118,13 +118,24 @@ public:
 		cvtColor(cv_ptr->image, hsv, CV_BGR2HSV);
 
 		cv::medianBlur(hsv,hsv,5);
+		//cv::GaussianBlur(hsv,hsv,cv::Size(5,11),0,0,cv::BORDER_DEFAULT);
 
-		inRange(hsv, cv::Scalar(13, 148, 110), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
+//						//morphological opening (removes small objects from the foreground)
+//						erode(hsv, hsv, getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2, 2)) );
+//						dilate( hsv, hsv, getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2, 2)) );
+
+//						//morphological closing (fill small holes in the foreground)
+//						dilate(hsv, hsv, getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2, 2)) );
+//						erode(hsv, hsv, getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2, 2)) );
+
+		inRange(hsv, cv::Scalar(13, 113, 201), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
+//		inRange(hsv, cv::Scalar(13, 164, 164), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
+
 		inRange(hsv, cv::Scalar(0, 170, 170), cv::Scalar(10, 255, 255), imgThresholded_new[1]); //Threshold the image Orange
-		inRange(hsv, cv::Scalar(30, 110, 80), cv::Scalar(75, 255, 255), imgThresholded_new[2]); //Threshold the image Green
-		inRange(hsv, cv::Scalar(90, 100, 80), cv::Scalar(115, 255, 255), imgThresholded_new[3]); //Threshold the image Blue
+		inRange(hsv, cv::Scalar(30, 80, 60), cv::Scalar(89, 255, 255), imgThresholded_new[2]); //Threshold the image Green
+		inRange(hsv, cv::Scalar(90, 29, 60), cv::Scalar(119, 255, 255), imgThresholded_new[3]); //Threshold the image Blue
 		inRange(hsv, cv::Scalar(120, 90, 80), cv::Scalar(160, 255, 255), imgThresholded_new[4]); //Threshold the image Purple
-		inRange(hsv, cv::Scalar(160, 130, 110), cv::Scalar(179, 255, 240), imgThresholded_new[5]); //Threshold the image Red
+		inRange(hsv, cv::Scalar(161, 50, 50), cv::Scalar(179, 255, 240), imgThresholded_new[5]); //Threshold the image Red
 
 		if(count < 6)
 		{
@@ -171,11 +182,11 @@ public:
 						obj = "";
 						// Approximate contour with accuracy proportional
 						// to the contour perimeter
-						cv::approxPolyDP(cv::Mat(contours[k]), approx, cv::arcLength(cv::Mat(contours[k]), true)*0.02, true);
+						cv::approxPolyDP(cv::Mat(contours[k]), approx, cv::arcLength(cv::Mat(contours[k]), true)*0.025, true); //0.02
 
 						// Skip small or non-convex objects
-						if (std::fabs(cv::contourArea(contours[k])) < 1000 || std::fabs(cv::contourArea(contours[k])) > 10000|| approx.size() < 3 || !cv::isContourConvex(approx))
-						{
+						if (std::fabs(cv::contourArea(contours[k])) < 100 || std::fabs(cv::contourArea(contours[k])) > 10000|| approx.size() < 3 || !cv::isContourConvex(approx))
+						{                                            // 1000                                            //10000
 							continue;
 						}
 
@@ -209,17 +220,7 @@ public:
 						{
 							// Use the degrees obtained above and the number of vertices
 							// to determine the shape of the contour
-							if (mincos >= -0.1 && maxcos <= 0.3)
-							{
-								obj = "Cube";
-								setLabel(dst, obj, contours[k]);
-							}
-							else if (vtc == 6 && mincos >= -0.93 && maxcos <= -0.34)
-							{
-								obj = "Cube";
-								setLabel(dst, obj, contours[k]);
-							}
-							else if (vtc == 6 && mincos >= -0.55 && maxcos <= -0.45)
+							if (mincos >= -0.93 && maxcos <= 0.3)
 							{
 								obj = "Cube";
 								setLabel(dst, obj, contours[k]);
@@ -232,8 +233,8 @@ public:
 							cv::Rect r = cv::boundingRect(contours[k]);
 							int radius = r.width / 2;
 
-							if (std::abs(1 - ((double)r.width / r.height)) <= 0.5 &&
-							std::abs(1 - (area / (CV_PI * std::pow(radius, 2)))) <= 0.5)
+							if (std::abs(1 - ((double)r.width / r.height)) <= 0.6 &&
+							std::abs(1 - (area / (CV_PI * std::pow(radius, 2)))) <= 0.6)
 							{
 								obj = "Ball";
 								setLabel(dst, obj, contours[k]);
@@ -256,8 +257,8 @@ public:
 							{
 								if(color[i].compare("Green")==0 && obj.compare("Ball")==0)
 									obj = "Cylinder";
-								else if(color[i].compare("Blue")==0 && obj.compare("Triangle")==0)
-									obj = "Triangle";
+//								else if(color[i].compare("Blue")==0 && obj.compare("Triangle")==0)
+//									obj = "Triangle";
 								else if(obj.compare("Triangle")==0 && color[i].compare("Blue") != 0)
 								{
 									obj = "Cube";
@@ -274,8 +275,8 @@ public:
 					//Calculate the moments of the thresholded image
 					oMoments[i] = moments(imgThresholded[i]);
 
-					dM01[i] = oMoments[i].m01;
-					dM10[i] = oMoments[i].m10;
+					//dM01[i] = oMoments[i].m01;
+					//dM10[i] = oMoments[i].m10;
 					dArea[i] = oMoments[i].m00;
 
 					if (dArea[i] > 10000)
@@ -298,8 +299,8 @@ public:
 		//	cv::imshow(OPENCV_WINDOW, cv_ptr->image);
 		cv::imshow("HSV",hsv);
 		cv::imshow("dst",dst);
-		cv::imshow("Image Thresholded",imgThresholded[5]);
-		cv::imshow("Yellow",imgThresholded[0]);
+		cv::imshow("Blue",imgThresholded[3]);
+		cv::imshow("Green",imgThresholded[2]);
 		cv::waitKey(3);
 
 		// Output modified video stream

@@ -79,15 +79,18 @@ public:
 
 		cvtColor(cv_ptr->image, hsv, CV_BGR2HSV);
 
+		cv::medianBlur(hsv,hsv,7);
+		//cv::GaussianBlur(hsv,hsv,cv::Size(11,11),0,0,cv::BORDER_DEFAULT);
+
 		inRange(hsv, cv::Scalar(iLowH, iLowS, iLowV), cv::Scalar(iHighH, iHighS, iHighV), imgThresholded); //Threshold the image
 
-		//morphological opening (removes small objects from the foreground)
-		erode(imgThresholded, imgThresholded, getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
-		dilate( imgThresholded, imgThresholded, getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
+//		//morphological opening (removes small objects from the foreground)
+//		erode(imgThresholded, imgThresholded, getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
+//		dilate( imgThresholded, imgThresholded, getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
 
-		//morphological closing (fill small holes in the foreground)
-		dilate( imgThresholded, imgThresholded, getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
-		erode(imgThresholded, imgThresholded, getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
+//		//morphological closing (fill small holes in the foreground)
+//		dilate( imgThresholded, imgThresholded, getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
+//		erode(imgThresholded, imgThresholded, getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
 
 		// Update GUI Window
 		cv::imshow(OPENCV_WINDOW, cv_ptr->image);
