@@ -83,7 +83,7 @@ public:
 
 	int count;
 
-	std::string obj, preobj;
+	std::string obj;
 	std_msgs::String obj_msgs;
 
 	objshape()
