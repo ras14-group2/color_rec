@@ -56,6 +56,7 @@ class objshape
 	image_transport::ImageTransport it_;
 	image_transport::Subscriber image_sub_;
 	image_transport::Publisher image_pub_;
+	ros::Publisher sound_pub_;
 
 private:
 
@@ -90,6 +91,7 @@ public:
 		// Subscribe to input video feed and publish output video feed
 		image_sub_ = it_.subscribe("camera/rgb/image_raw", 1, &objshape::imageCb, this); // /camera/image_raw
 		image_pub_ = it_.advertise("/image_converter/output_video", 1);
+		sound_pub_= n_.advertise<std_msgs::String>("/espeak/string", 1);
 
 		//	cv::namedWindow(OPENCV_WINDOW);
 	}
@@ -118,18 +120,11 @@ public:
 		cvtColor(cv_ptr->image, hsv, CV_BGR2HSV);
 
 		cv::medianBlur(hsv,hsv,5);
-		//cv::GaussianBlur(hsv,hsv,cv::Size(5,11),0,0,cv::BORDER_DEFAULT);
 
-//						//morphological opening (removes small objects from the foreground)
-//						erode(hsv, hsv, getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2, 2)) );
-//						dilate( hsv, hsv, getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2, 2)) );
+		inRange(hsv, cv::Scalar(11, 107, 212), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
+//		inRange(hsv, cv::Scalar(11, 150, 150), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
 
-//						//morphological closing (fill small holes in the foreground)
-//						dilate(hsv, hsv, getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2, 2)) );
-//						erode(hsv, hsv, getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2, 2)) );
-
-		inRange(hsv, cv::Scalar(13, 113, 201), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
-//		inRange(hsv, cv::Scalar(13, 164, 164), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
+		//		inRange(hsv, cv::Scalar(13, 164, 164), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
 
 		inRange(hsv, cv::Scalar(0, 170, 170), cv::Scalar(10, 255, 255), imgThresholded_new[1]); //Threshold the image Orange
 		inRange(hsv, cv::Scalar(30, 80, 60), cv::Scalar(89, 255, 255), imgThresholded_new[2]); //Threshold the image Green
@@ -141,13 +136,6 @@ public:
 		{
 			for(int i=0; i<6 ; i++)
 			{
-//				//morphological opening (removes small objects from the foreground)
-//				erode(imgThresholded_new[i], imgThresholded_new[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
-//				dilate( imgThresholded_new[i], imgThresholded_new[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
-
-//				//morphological closing (fill small holes in the foreground)
-//				dilate( imgThresholded_new[i], imgThresholded_new[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
-//				erode(imgThresholded_new[i], imgThresholded_new[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(4, 4)) );
 
 				if(count==0)
 				{
@@ -284,7 +272,7 @@ public:
 
 						if(color[i].compare("Orange")==0)
 						{
-							obj = "Patrick";
+							obj = "Patric";
 						}
 						else{
 							obj = "Cross";
@@ -295,16 +283,20 @@ public:
 			}//end of loop over all colors
 		} //end of if(count==6)
 
+
 		//	Update GUI Window
 		//	cv::imshow(OPENCV_WINDOW, cv_ptr->image);
 		cv::imshow("HSV",hsv);
 		cv::imshow("dst",dst);
-		cv::imshow("Blue",imgThresholded[3]);
+		cv::imshow("Yellow",imgThresholded[0]);
 		cv::imshow("Green",imgThresholded[2]);
 		cv::waitKey(3);
 
 		// Output modified video stream
 		image_pub_.publish(cv_ptr->toImageMsg());
+		std_msgs::String obj_msgs;
+		obj_msgs.data=obj.c_str();
+		sound_pub_.publish(obj_msgs);
 	}
 };
 

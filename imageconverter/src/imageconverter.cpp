@@ -79,7 +79,7 @@ public:
 
 		cvtColor(cv_ptr->image, hsv, CV_BGR2HSV);
 
-		cv::medianBlur(hsv,hsv,7);
+		cv::medianBlur(hsv,hsv,5);
 		//cv::GaussianBlur(hsv,hsv,cv::Size(11,11),0,0,cv::BORDER_DEFAULT);
 
 		inRange(hsv, cv::Scalar(iLowH, iLowS, iLowV), cv::Scalar(iHighH, iHighS, iHighV), imgThresholded); //Threshold the image
