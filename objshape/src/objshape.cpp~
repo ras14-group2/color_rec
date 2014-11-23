@@ -14,6 +14,9 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <cmath>
 #include <iostream>
+#include <ocv_msgs/ocv.h>
+
+
 
 static const std::string OPENCV_WINDOW = "Image window";
 
@@ -48,7 +51,6 @@ void setLabel(cv::Mat& im, const std::string label, std::vector<cv::Point>& cont
 	cv::putText(im, label, pt, fontface, scale, CV_RGB(0,0,0), thickness, 8);
 }
 
-
 class objshape
 {
 
@@ -56,13 +58,14 @@ class objshape
 	image_transport::ImageTransport it_;
 	image_transport::Subscriber image_sub_;
 	image_transport::Publisher image_pub_;
+	ros::Publisher ocv_pub_;
 	ros::Publisher sound_pub_;
 
 private:
 
 public:
 
-	cv::Mat hsv, imgThresholded[6],imgThresholded_new[8], dst;
+	cv::Mat hsv, imgThresholded[6],imgThresholded_new[6], dst;
 	int iLowH;
 	int iHighH;
 
@@ -72,19 +75,20 @@ public:
 	int iLowV;
 	int iHighV;
 
-	cv::Moments oMoments[8];
+	cv::Moments oMoments[6];
 
-	double dM01[8];
-	double dM10[8];
-	double dArea[8];
+	double dM01[6];
+	double dM10[6];
+	double dArea[6];
 
-	int posX[8];
-	int posY[8];
+	int posX[6];
+	int posY[6];
 
 	int count;
 
-	std::string obj;
-	std_msgs::String obj_msgs;
+	std::string obj, preobj;
+	std_msgs::String msgrec;
+	ocv_msgs::ocv ocvmgs;
 
 	objshape()
 	: it_(n_), iLowH(0), iHighH(179), iLowS(0), iHighS(255), iLowV(0), iHighV(255), count(0)
@@ -92,6 +96,7 @@ public:
 		// Subscribe to input video feed and publish output video feed
 		image_sub_ = it_.subscribe("camera/rgb/image_raw", 1, &objshape::imageCb, this); // /camera/image_raw
 		image_pub_ = it_.advertise("/image_converter/output_video", 1);
+		ocv_pub_= n_.advertise<ocv_msgs::ocv>("/ocvrec/strings", 1);
 		sound_pub_= n_.advertise<std_msgs::String>("/espeak/string", 1);
 
 		//	cv::namedWindow(OPENCV_WINDOW);
@@ -123,10 +128,8 @@ public:
 		cv::medianBlur(hsv,hsv,5);
 
 		inRange(hsv, cv::Scalar(11, 107, 212), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
-//		inRange(hsv, cv::Scalar(11, 150, 150), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
-
+		//		inRange(hsv, cv::Scalar(11, 150, 150), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
 		//		inRange(hsv, cv::Scalar(13, 164, 164), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
-
 		inRange(hsv, cv::Scalar(0, 170, 170), cv::Scalar(10, 255, 255), imgThresholded_new[1]); //Threshold the image Orange
 		inRange(hsv, cv::Scalar(30, 80, 60), cv::Scalar(89, 255, 255), imgThresholded_new[2]); //Threshold the image Green
 		inRange(hsv, cv::Scalar(90, 29, 60), cv::Scalar(119, 255, 255), imgThresholded_new[3]); //Threshold the image Blue
@@ -246,8 +249,8 @@ public:
 							{
 								if(color[i].compare("Green")==0 && obj.compare("Ball")==0)
 									obj = "Cylinder";
-//								else if(color[i].compare("Blue")==0 && obj.compare("Triangle")==0)
-//									obj = "Triangle";
+								//								else if(color[i].compare("Blue")==0 && obj.compare("Triangle")==0)
+								//									obj = "Triangle";
 								else if(obj.compare("Triangle")==0 && color[i].compare("Blue") != 0)
 								{
 									obj = "Cube";
@@ -255,9 +258,13 @@ public:
 								if(preobj.compare(obj.c_str())!=0){
 									ROS_INFO("Object detected = %s \n", (color[i]+' '+obj).c_str());
 									preobj = obj;
-									obj_msgs.data=color[i]+' '+obj;
-									sound_pub_.publish(obj_msgs);
-								}                	
+									//publish messages color and shape
+									msgrec.data = color[i].c_str();
+									ocvmgs.color = msgrec;
+									msgrec.data = obj.c_str();
+									ocvmgs.shape = msgrec;
+									ocv_pub_.publish(ocvmgs);
+								}
 							}
 						}
 					}//end of loop over all contours
@@ -281,12 +288,17 @@ public:
 						else{
 							obj = "Cross";
 						}
-								if(preobj.compare(obj.c_str())!=0){
-									ROS_INFO("Object detected = %s \n", (color[i]+' '+obj).c_str());
-									preobj = obj;
-									obj_msgs.data=color[i]+' '+obj;
-									sound_pub_.publish(obj_msgs);
-								}   
+						if(preobj.compare(obj.c_str())!=0){
+							ROS_INFO("Object detected = %s \n", (color[i]+' '+obj).c_str());
+							ROS_INFO("YEI AN OBJ");
+							preobj = obj;
+							//publish messages color and shape
+							msgrec.data = color[i].c_str();
+							ocvmgs.color = msgrec;
+							msgrec.data = obj.c_str();
+							ocvmgs.shape = msgrec;
+							ocv_pub_.publish(ocvmgs);
+						}
 					}
 				}//end of distinguish between orange/purple and other colors
 			}//end of loop over all colors
@@ -295,20 +307,24 @@ public:
 
 		//	Update GUI Window
 		//	cv::imshow(OPENCV_WINDOW, cv_ptr->image);
-		//cv::imshow("HSV",hsv);
-		//cv::imshow("dst",dst);
-		//cv::imshow("Yellow",imgThresholded[0]);
-		//cv::imshow("Green",imgThresholded[2]);
-		//cv::waitKey(3);
+		cv::imshow("HSV",hsv);
+		cv::imshow("dst",dst);
+
+		cv::imshow("Yellow",imgThresholded[1]);
+		cv::imshow("Green",imgThresholded[2]);
+		cv::waitKey(3);
 
 		// Output modified video stream
-		//image_pub_.publish(cv_ptr->toImageMsg());
+		image_pub_.publish(cv_ptr->toImageMsg());
+		std_msgs::String obj_msgs;
+		obj_msgs.data=obj.c_str();
+		sound_pub_.publish(obj_msgs);
 	}
 };
 
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, "image_converter");
+	ros::init(argc, argv, "objshape_node");
 	objshape objshape_node;
 	ros::Rate loop_rate(10*5);
 
@@ -320,3 +336,4 @@ int main(int argc, char **argv)
 
 	return 0;
 }
+
