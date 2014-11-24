@@ -266,6 +266,8 @@ public:
 								{
 									obj = "Cube";
 								}
+
+								// Publish Color and Shape of the object only if the object is different from the previous detected
 								if(preobj.compare(obj.c_str())!=0){
 									ROS_INFO("Object detected = %s \n", (color[i]+' '+obj).c_str());
 									preobj = obj;
@@ -386,8 +388,8 @@ public:
 
 		cv::Mat coordinates = R * invK * distance * imageCoordinates;
 
-		std::cout << coordinates<< std::endl;
-		return geometry_msgs::Point();
+		//std::cout << coordinates<< std::endl;
+		return geometry_msgs::Point(coordinates.at<float>(0,0)/1000, 0, coordinates.at<float>(2,0)/1000);
 	}
 
 };
