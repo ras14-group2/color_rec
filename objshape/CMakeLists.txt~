@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(objcolor)
+project(objshape)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   cv_bridge
   image_transport
+#  message_generation
 )
 
 find_package( OpenCV REQUIRED )
@@ -50,11 +51,11 @@ find_package( OpenCV REQUIRED )
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
+ add_message_files(
 #   FILES
-#   Message1.msg
+#   ocv.msg
 #   Message2.msg
-# )
+ )
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -90,6 +91,7 @@ catkin_package(
 #  LIBRARIES ras_lab1_motor_controller
 #  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
+#   CATKIN_DEPENDS message_runtime
 )
 
 ###########
@@ -109,14 +111,14 @@ include_directories(
 # )
 
 ## Declare a cpp executable
-add_executable(objcolor_node src/objcolor.cpp)
+add_executable(objshape_node src/objshape.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(ras_lab1_motor_controller_node ras_lab1_motor_controller_generate_messages_cpp)
+# add_dependencies(objshape_node objshape_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(objcolor_node
+ target_link_libraries(objshape_node
    ${catkin_LIBRARIES}
    ${OpenCV_LIBRARIES}
  )

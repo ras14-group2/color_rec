@@ -15,10 +15,12 @@
 #include <cmath>
 #include <iostream>
 #include <ocv_msgs/ocv.h>
+#include <geometry_msgs/Point.h>
 
 
 
 static const std::string OPENCV_WINDOW = "Image window";
+cv_bridge::CvImagePtr depth_ptr;
 
 /**
  * Helper function to find a cosine of angle between vectors
@@ -57,6 +59,7 @@ class objshape
 	ros::NodeHandle n_;
 	image_transport::ImageTransport it_;
 	image_transport::Subscriber image_sub_;
+	image_transport::Subscriber depth_sub_;
 	image_transport::Publisher image_pub_;
 	ros::Publisher ocv_pub_;
 	ros::Publisher sound_pub_;
@@ -87,7 +90,6 @@ public:
 	int count;
 
 	std::string obj, preobj;
-	std_msgs::String obj_msgs;
 	std_msgs::String msgrec;
 	ocv_msgs::ocv ocvmgs;
 
@@ -96,6 +98,7 @@ public:
 	{
 		// Subscribe to input video feed and publish output video feed
 		image_sub_ = it_.subscribe("camera/rgb/image_raw", 1, &objshape::imageCb, this); // /camera/image_raw
+		depth_sub_ = it_.subscribe("camera/depth/image_raw", 1, &objshape::depthCallBack, this);
 		image_pub_ = it_.advertise("/image_converter/output_video", 1);
 		ocv_pub_= n_.advertise<ocv_msgs::ocv>("/ocvrec/strings", 1);
 		sound_pub_= n_.advertise<std_msgs::String>("/espeak/string", 1);
@@ -141,7 +144,6 @@ public:
 		{
 			for(int i=0; i<6 ; i++)
 			{
-
 				if(count==0)
 				{
 					imgThresholded[i] = imgThresholded_new[i];
@@ -248,6 +250,14 @@ public:
 
 							if (posX[i] >= 0 && posY[i] >= 0)
 							{
+								// Draw an example circle on the video stream
+								if (cv_ptr->image.rows > 60 && cv_ptr->image.cols > 60)
+								{
+									cv::circle(cv_ptr->image, cv::Point(posX[i], posY[i]), 10, CV_RGB(255,0,0));
+									ROS_INFO("Position = (%d, %d) \n",posX[i], posY[i] );
+									obj3DPos(posX[i], posY[i]);
+								}
+
 								if(color[i].compare("Green")==0 && obj.compare("Ball")==0)
 									obj = "Cylinder";
 								//								else if(color[i].compare("Blue")==0 && obj.compare("Triangle")==0)
@@ -265,9 +275,6 @@ public:
 									msgrec.data = obj.c_str();
 									ocvmgs.shape = msgrec;
 									ocv_pub_.publish(ocvmgs);
-									//publish sound message
-							    obj_msgs.data=color[i]+' '+obj;
-						      sound_pub_.publish(obj_msgs);
 								}
 							}
 						}
@@ -278,12 +285,18 @@ public:
 					//Calculate the moments of the thresholded image
 					oMoments[i] = moments(imgThresholded[i]);
 
-					//dM01[i] = oMoments[i].m01;
-					//dM10[i] = oMoments[i].m10;
+					dM01[i] = oMoments[i].m01;
+					dM10[i] = oMoments[i].m10;
 					dArea[i] = oMoments[i].m00;
 
 					if (dArea[i] > 10000)
 					{
+						// Draw an example circle on the video stream
+						if (cv_ptr->image.rows > 60 && cv_ptr->image.cols > 60)
+						{
+							cv::circle(cv_ptr->image, cv::Point(posX[i], posY[i]), 10, CV_RGB(255,0,0));
+							ROS_INFO("Position = (%d, %d) \n",posX[i], posY[i] );
+						}
 
 						if(color[i].compare("Orange")==0)
 						{
@@ -294,7 +307,6 @@ public:
 						}
 						if(preobj.compare(obj.c_str())!=0){
 							ROS_INFO("Object detected = %s \n", (color[i]+' '+obj).c_str());
-							ROS_INFO("YEI AN OBJ");
 							preobj = obj;
 							//publish messages color and shape
 							msgrec.data = color[i].c_str();
@@ -302,9 +314,6 @@ public:
 							msgrec.data = obj.c_str();
 							ocvmgs.shape = msgrec;
 							ocv_pub_.publish(ocvmgs);
-							//publish sound message
-							obj_msgs.data=color[i]+' '+obj;
-						  sound_pub_.publish(obj_msgs);
 						}
 					}
 				}//end of distinguish between orange/purple and other colors
@@ -313,18 +322,74 @@ public:
 
 
 		//	Update GUI Window
-		//	cv::imshow(OPENCV_WINDOW, cv_ptr->image);
-		cv::imshow("HSV",hsv);
+		cv::imshow(OPENCV_WINDOW, cv_ptr->image);
+		cv::imwrite( "/home/carlos/Pictures/cali.png", cv_ptr->image );
+		//cv::imshow("HSV",hsv);
 		cv::imshow("dst",dst);
 
-		cv::imshow("Yellow",imgThresholded[1]);
-		cv::imshow("Green",imgThresholded[2]);
+		//cv::imshow("Yellow",imgThresholded[1]);
+		//cv::imshow("Green",imgThresholded[2]);
 		cv::waitKey(3);
 
 		// Output modified video stream
 		image_pub_.publish(cv_ptr->toImageMsg());
 		std_msgs::String obj_msgs;
+		obj_msgs.data=obj.c_str();
+		sound_pub_.publish(obj_msgs);
 	}
+
+	void depthCallBack(const sensor_msgs::ImageConstPtr& msg)
+	{
+		try
+		{
+			depth_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_32FC1);
+
+		}
+		catch (cv_bridge::Exception& e)
+		{
+			ROS_ERROR("cv_bridge exception: %s", e.what());
+			return;
+		}
+	}
+
+	geometry_msgs::Point obj3DPos(int u, int v)
+	{
+		cv::Mat imageCoordinates(3,1, cv::DataType<float>::type);
+		imageCoordinates.at<float>(0,0) = u;
+		imageCoordinates.at<float>(1,0) = v;
+		imageCoordinates.at<float>(2,0) = 1;
+		double theta_x = 0.0;
+		ros::param::getCached("/calibration/x_angle", theta_x);
+
+		float distance = depth_ptr->image.at<float>(v,u);
+		cv::Mat invK(3,3, cv::DataType<float>::type);  // inverse matrix of camera intrinsic parameters
+		invK.at<float>(0,0) =  0.001742000052949;
+		invK.at<float>(0,1) =  0.000000000000000;
+		invK.at<float>(0,2) = -0.556569016917198;
+		invK.at<float>(1,0) =  0.000000000000000;
+		invK.at<float>(1,1) =  0.001742000052949;
+		invK.at<float>(1,2) = -0.417209012681280;
+		invK.at<float>(2,0) =  0.000000000000000;
+		invK.at<float>(2,1) =  0.000000000000000;
+		invK.at<float>(2,2) =  1.000000000000000;
+
+		cv::Mat R(3,3, cv::DataType<float>::type); // matrix of camera extrinsic parameters
+		R.at<float>(0,0) =  1.0;
+		R.at<float>(0,1) =  0.0;
+		R.at<float>(0,2) =  0.0;
+		R.at<float>(1,0) =  0.0;
+		R.at<float>(1,1) =  std::cos(-theta_x);
+		R.at<float>(1,2) = -std::sin(-theta_x);
+		R.at<float>(2,0) =  0.0;
+		R.at<float>(2,1) =  std::sin(-theta_x);
+		R.at<float>(2,2) =  std::cos(-theta_x);
+
+		cv::Mat coordinates = R * invK * distance * imageCoordinates;
+
+		std::cout << coordinates<< std::endl;
+		return geometry_msgs::Point();
+	}
+
 };
 
 int main(int argc, char **argv)
@@ -341,4 +406,3 @@ int main(int argc, char **argv)
 
 	return 0;
 }
-
