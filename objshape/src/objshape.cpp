@@ -14,8 +14,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <cmath>
 #include <iostream>
-#include <ocv_msgs/ocv.h>
 #include <geometry_msgs/Point.h>
+#include <ocv_msgs/ocv.h>
 
 
 
@@ -100,7 +100,7 @@ public:
 		image_sub_ = it_.subscribe("camera/rgb/image_raw", 1, &objshape::imageCb, this); // /camera/image_raw
 		depth_sub_ = it_.subscribe("camera/depth/image_raw", 1, &objshape::depthCallBack, this);
 		image_pub_ = it_.advertise("/image_converter/output_video", 1);
-		ocv_pub_= n_.advertise<ocv_msgs::ocv>("/ocvrec/strings", 1);
+		ocv_pub_= n_.advertise<ocv_msgs::ocv>("/ocvrec/data", 1);
 		sound_pub_= n_.advertise<std_msgs::String>("/espeak/string", 1);
 
 		//	cv::namedWindow(OPENCV_WINDOW);
@@ -329,8 +329,8 @@ public:
 		//cv::imshow("HSV",hsv);
 		cv::imshow("dst",dst);
 
-		//cv::imshow("Yellow",imgThresholded[1]);
-		//cv::imshow("Green",imgThresholded[2]);
+		cv::imshow("Orange",imgThresholded[1]);
+		cv::imshow("Purple",imgThresholded[4]);
 		cv::waitKey(3);
 
 		// Output modified video stream
@@ -389,7 +389,11 @@ public:
 		cv::Mat coordinates = R * invK * distance * imageCoordinates;
 
 		//std::cout << coordinates<< std::endl;
-		return geometry_msgs::Point(coordinates.at<float>(0,0)/1000, 0, coordinates.at<float>(2,0)/1000);
+		geometry_msgs::Point position;
+		position.x = coordinates.at<float>(0,0)/1000;
+		position.y = 0;
+		position.z = coordinates.at<float>(2,0)/1000;
+		return geometry_msgs::Point(position);
 	}
 
 };
