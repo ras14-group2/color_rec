@@ -140,7 +140,8 @@ public:
 		inRange(hsv, cv::Scalar(120, 90, 80), cv::Scalar(160, 255, 255), imgThresholded_new[4]); //Threshold the image Purple
 		inRange(hsv, cv::Scalar(161, 50, 50), cv::Scalar(179, 255, 240), imgThresholded_new[5]); //Threshold the image Red
 
-		if(count < 6)
+		// Adds "n" thresholded images for each color in other to fill black blobs
+		if(count < 15)
 		{
 			for(int i=0; i<6 ; i++)
 			{
@@ -156,7 +157,7 @@ public:
 
 		dst = cv_ptr->image.clone();
 
-		if(count==6)
+		if(count==15)
 		{
 			count = 0;
 
@@ -174,7 +175,8 @@ public:
 
 					for (int k = 0; k < contours.size(); k++)
 					{
-						obj = "";
+						obj = ""; // resets the obj
+
 						// Approximate contour with accuracy proportional
 						// to the contour perimeter
 						cv::approxPolyDP(cv::Mat(contours[k]), approx, cv::arcLength(cv::Mat(contours[k]), true)*0.025, true); //0.02
@@ -241,8 +243,9 @@ public:
 						dM01[i] = oMoments[i].m01;
 						dM10[i] = oMoments[i].m10;
 						dArea[i] = oMoments[i].m00;
+						ROS_INFO("Area = %f", dArea[i]);
 
-						if (dArea[i] > 10000 && obj.compare("")!=0)
+						if (dArea[i] > 20000 && dArea[i] > 75000 && obj.compare("")!=0)
 						{
 							//calculate the position of the object
 							posX[i] = dM10[i] / dArea[i];
@@ -255,7 +258,6 @@ public:
 								{
 									cv::circle(cv_ptr->image, cv::Point(posX[i], posY[i]), 10, CV_RGB(255,0,0));
 									ROS_INFO("Position = (%d, %d) \n",posX[i], posY[i] );
-									obj3DPos(posX[i], posY[i]);
 								}
 
 								if(color[i].compare("Green")==0 && obj.compare("Ball")==0)
@@ -271,11 +273,12 @@ public:
 								if(preobj.compare(obj.c_str())!=0){
 									ROS_INFO("Object detected = %s \n", (color[i]+' '+obj).c_str());
 									preobj = obj;
-									//publish messages color and shape
+									//publish messages color, shape and position
 									msgrec.data = color[i].c_str();
 									ocvmgs.color = msgrec;
 									msgrec.data = obj.c_str();
 									ocvmgs.shape = msgrec;
+									//ocvmgs.position = obj3DPos(posX[i], posY[i]);
 									ocv_pub_.publish(ocvmgs);
 								}
 							}
@@ -291,31 +294,39 @@ public:
 					dM10[i] = oMoments[i].m10;
 					dArea[i] = oMoments[i].m00;
 
-					if (dArea[i] > 10000)
+					if (dArea[i] > 20000)
 					{
-						// Draw an example circle on the video stream
-						if (cv_ptr->image.rows > 60 && cv_ptr->image.cols > 60)
-						{
-							cv::circle(cv_ptr->image, cv::Point(posX[i], posY[i]), 10, CV_RGB(255,0,0));
-							ROS_INFO("Position = (%d, %d) \n",posX[i], posY[i] );
-						}
+						//calculate the position of the object
+						posX[i] = dM10[i] / dArea[i];
+						posY[i] = dM01[i] / dArea[i];
 
-						if(color[i].compare("Orange")==0)
+						if (posX[i] >= 0 && posY[i] >= 0)
 						{
-							obj = "Patric";
-						}
-						else{
-							obj = "Cross";
-						}
-						if(preobj.compare(obj.c_str())!=0){
-							ROS_INFO("Object detected = %s \n", (color[i]+' '+obj).c_str());
-							preobj = obj;
-							//publish messages color and shape
-							msgrec.data = color[i].c_str();
-							ocvmgs.color = msgrec;
-							msgrec.data = obj.c_str();
-							ocvmgs.shape = msgrec;
-							ocv_pub_.publish(ocvmgs);
+							// Draw an example circle on the video stream
+							if (cv_ptr->image.rows > 60 && cv_ptr->image.cols > 60)
+							{
+								cv::circle(cv_ptr->image, cv::Point(posX[i], posY[i]), 10, CV_RGB(255,0,0));
+								ROS_INFO("Position = (%d, %d) \n",posX[i], posY[i] );
+							}
+
+							if(color[i].compare("Orange")==0)
+							{
+								obj = "Patric";
+							}
+							else{
+								obj = "Cross";
+							}
+							if(preobj.compare(obj.c_str())!=0){
+								ROS_INFO("Object detected = %s \n", (color[i]+' '+obj).c_str());
+								preobj = obj;
+								//publish messages color, shape and position
+								msgrec.data = color[i].c_str();
+								ocvmgs.color = msgrec;
+								msgrec.data = obj.c_str();
+								ocvmgs.shape = msgrec;
+								//ocvmgs.position = obj3DPos(posX[i], posY[i]);
+								ocv_pub_.publish(ocvmgs);
+							}
 						}
 					}
 				}//end of distinguish between orange/purple and other colors
@@ -324,22 +335,23 @@ public:
 
 
 		//	Update GUI Window
-		cv::imshow(OPENCV_WINDOW, cv_ptr->image);
-		cv::imwrite( "/home/carlos/Pictures/cali.png", cv_ptr->image );
+		//cv::imshow(OPENCV_WINDOW, cv_ptr->image);
+		//cv::imwrite( "/home/carlos/Pictures/cali.png", cv_ptr->image );
 		//cv::imshow("HSV",hsv);
 		cv::imshow("dst",dst);
-
-		cv::imshow("Orange",imgThresholded[1]);
-		cv::imshow("Purple",imgThresholded[4]);
+		//cv::imshow("Orange",imgThresholded[1]);
+		//cv::imshow("Purple",imgThresholded[4]);
 		cv::waitKey(3);
 
 		// Output modified video stream
+		// ROS_INFO("Hello");
 		image_pub_.publish(cv_ptr->toImageMsg());
 		std_msgs::String obj_msgs;
 		obj_msgs.data=obj.c_str();
 		sound_pub_.publish(obj_msgs);
 	}
 
+	// Calculates distance from the camera to the object
 	void depthCallBack(const sensor_msgs::ImageConstPtr& msg)
 	{
 		try
@@ -354,6 +366,7 @@ public:
 		}
 	}
 
+	// Calculates the 3D position of the observed object
 	geometry_msgs::Point obj3DPos(int u, int v)
 	{
 		cv::Mat imageCoordinates(3,1, cv::DataType<float>::type);
@@ -363,7 +376,8 @@ public:
 		double theta_x = 0.0;
 		ros::param::getCached("/calibration/x_angle", theta_x);
 
-		float distance = depth_ptr->image.at<float>(v,u);
+		float distance = depth_ptr->image.at<float>(v,u); // distance from the camera to the object
+
 		cv::Mat invK(3,3, cv::DataType<float>::type);  // inverse matrix of camera intrinsic parameters
 		invK.at<float>(0,0) =  0.001742000052949;
 		invK.at<float>(0,1) =  0.000000000000000;
@@ -386,13 +400,13 @@ public:
 		R.at<float>(2,1) =  std::sin(-theta_x);
 		R.at<float>(2,2) =  std::cos(-theta_x);
 
-		cv::Mat coordinates = R * invK * distance * imageCoordinates;
+		cv::Mat coordinates = R * invK * distance * imageCoordinates; // Coordinates in the robot space handle by setting y = 0
 
 		//std::cout << coordinates<< std::endl;
 		geometry_msgs::Point position;
-		position.x = coordinates.at<float>(0,0)/1000;
-		position.y = 0;
-		position.z = coordinates.at<float>(2,0)/1000;
+		position.x = coordinates.at<float>(0,0)/1000; // in meters
+		position.y = 0; // in meters
+		position.z = coordinates.at<float>(2,0)/1000; // in meters
 		return geometry_msgs::Point(position);
 	}
 
@@ -403,7 +417,7 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "objshape_node");
 	objshape objshape_node;
 	ros::Rate loop_rate(10*5);
-
+	ros::Duration(2).sleep(); // sleep for half a second
 	while (ros::ok())
 	{
 		ros::spinOnce();
