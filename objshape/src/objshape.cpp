@@ -87,14 +87,14 @@ public:
 	int posX[6];
 	int posY[6];
 
-	int count;
+	int count, cp1, cp2;
 
-	std::string obj, preobj;
+	std::string obj, preobj, precolor;
 	std_msgs::String msgrec;
 	ocv_msgs::ocv ocvmgs;
 
 	objshape()
-	: it_(n_), iLowH(0), iHighH(179), iLowS(0), iHighS(255), iLowV(0), iHighV(255), count(0)
+	: it_(n_), iLowH(0), iHighH(179), iLowS(0), iHighS(255), iLowV(0), iHighV(255), count(0), cp1(0), cp2(0)
 	{
 		// Subscribe to input video feed and publish output video feed
 		image_sub_ = it_.subscribe("camera/rgb/image_raw", 1, &objshape::imageCb, this); // /camera/image_raw
@@ -141,7 +141,7 @@ public:
 		inRange(hsv, cv::Scalar(161, 50, 50), cv::Scalar(179, 255, 240), imgThresholded_new[5]); //Threshold the image Red
 
 		// Adds "n" thresholded images for each color in other to fill black blobs
-		if(count < 15)
+		if(count < 3)
 		{
 			for(int i=0; i<6 ; i++)
 			{
@@ -157,7 +157,7 @@ public:
 
 		dst = cv_ptr->image.clone();
 
-		if(count==15)
+		if(count==3)
 		{
 			count = 0;
 
@@ -243,9 +243,9 @@ public:
 						dM01[i] = oMoments[i].m01;
 						dM10[i] = oMoments[i].m10;
 						dArea[i] = oMoments[i].m00;
-						ROS_INFO("Area = %f", dArea[i]);
+						//ROS_INFO("Area = %f", dArea[i]);
 
-						if (dArea[i] > 20000 && dArea[i] > 75000 && obj.compare("")!=0)
+						if (dArea[i] > 650000 && dArea[i] < 10000000 && obj.compare("")!=0)
 						{
 							//calculate the position of the object
 							posX[i] = dM10[i] / dArea[i];
@@ -257,7 +257,7 @@ public:
 								if (cv_ptr->image.rows > 60 && cv_ptr->image.cols > 60)
 								{
 									cv::circle(cv_ptr->image, cv::Point(posX[i], posY[i]), 10, CV_RGB(255,0,0));
-									ROS_INFO("Position = (%d, %d) \n",posX[i], posY[i] );
+									//ROS_INFO("Position = (%d, %d) \n",posX[i], posY[i] );
 								}
 
 								if(color[i].compare("Green")==0 && obj.compare("Ball")==0)
@@ -269,17 +269,25 @@ public:
 									obj = "Cube";
 								}
 
-								// Publish Color and Shape of the object only if the object is different from the previous detected
-								if(preobj.compare(obj.c_str())!=0){
-									ROS_INFO("Object detected = %s \n", (color[i]+' '+obj).c_str());
-									preobj = obj;
+								// Publish Color and Shape of the object
+								// only if the object or color is different from the previous detected
+								// cp1 is used to publish messages maximum 3 consecutive times
+								if(preobj.compare(obj.c_str())!=0 || precolor.compare(color[i].c_str())!=0 || cp1<3){
+									//ROS_INFO("Object detected = %s \n", (color[i]+' '+obj).c_str());
+									preobj = obj; //previous object
+									precolor = color[i]; //previous color
 									//publish messages color, shape and position
 									msgrec.data = color[i].c_str();
 									ocvmgs.color = msgrec;
 									msgrec.data = obj.c_str();
 									ocvmgs.shape = msgrec;
-									//ocvmgs.position = obj3DPos(posX[i], posY[i]);
+									ocvmgs.position = obj3DPos(posX[i], posY[i]);
 									ocv_pub_.publish(ocvmgs);
+									cp1++;
+									if(cp1==3)
+									{
+										cp1=0;
+									}
 								}
 							}
 						}
@@ -294,7 +302,7 @@ public:
 					dM10[i] = oMoments[i].m10;
 					dArea[i] = oMoments[i].m00;
 
-					if (dArea[i] > 20000)
+					if (dArea[i] > 650000 && dArea[i] < 10000000)
 					{
 						//calculate the position of the object
 						posX[i] = dM10[i] / dArea[i];
@@ -306,7 +314,7 @@ public:
 							if (cv_ptr->image.rows > 60 && cv_ptr->image.cols > 60)
 							{
 								cv::circle(cv_ptr->image, cv::Point(posX[i], posY[i]), 10, CV_RGB(255,0,0));
-								ROS_INFO("Position = (%d, %d) \n",posX[i], posY[i] );
+								//ROS_INFO("Position = (%d, %d) \n",posX[i], posY[i] );
 							}
 
 							if(color[i].compare("Orange")==0)
@@ -316,16 +324,26 @@ public:
 							else{
 								obj = "Cross";
 							}
-							if(preobj.compare(obj.c_str())!=0){
-								ROS_INFO("Object detected = %s \n", (color[i]+' '+obj).c_str());
-								preobj = obj;
+
+							// Publish Color and Shape of the object
+							// only if the object or color is different from the previous detected
+							// cp2 is used to publish messages from same object maximum 3 consecutive times
+							if(preobj.compare(obj.c_str())!=0 || precolor.compare(color[i].c_str())!=0 || cp2<3){
+								//ROS_INFO("Object detected = %s \n", (color[i]+' '+obj).c_str());
+								preobj = obj; //previous object
+								precolor = color[i]; //previous color
 								//publish messages color, shape and position
 								msgrec.data = color[i].c_str();
 								ocvmgs.color = msgrec;
 								msgrec.data = obj.c_str();
 								ocvmgs.shape = msgrec;
-								//ocvmgs.position = obj3DPos(posX[i], posY[i]);
+								ocvmgs.position = obj3DPos(posX[i], posY[i]);
 								ocv_pub_.publish(ocvmgs);
+								cp2++;
+								if(cp2==3)
+								{
+									cp2=0;
+								}
 							}
 						}
 					}
@@ -338,17 +356,16 @@ public:
 		//cv::imshow(OPENCV_WINDOW, cv_ptr->image);
 		//cv::imwrite( "/home/carlos/Pictures/cali.png", cv_ptr->image );
 		//cv::imshow("HSV",hsv);
-		cv::imshow("dst",dst);
+		//cv::imshow("dst",dst);
 		//cv::imshow("Orange",imgThresholded[1]);
 		//cv::imshow("Purple",imgThresholded[4]);
-		cv::waitKey(3);
+		//cv::waitKey(3);
 
 		// Output modified video stream
-		// ROS_INFO("Hello");
-		image_pub_.publish(cv_ptr->toImageMsg());
-		std_msgs::String obj_msgs;
-		obj_msgs.data=obj.c_str();
-		sound_pub_.publish(obj_msgs);
+		// image_pub_.publish(cv_ptr->toImageMsg());
+		// std_msgs::String obj_msgs;
+		// obj_msgs.data=obj.c_str();
+		// sound_pub_.publish(obj_msgs);
 	}
 
 	// Calculates distance from the camera to the object
@@ -377,6 +394,7 @@ public:
 		ros::param::getCached("/calibration/x_angle", theta_x);
 
 		float distance = depth_ptr->image.at<float>(v,u); // distance from the camera to the object
+		//ROS_INFO("distance = %f", distance);
 
 		cv::Mat invK(3,3, cv::DataType<float>::type);  // inverse matrix of camera intrinsic parameters
 		invK.at<float>(0,0) =  0.001742000052949;
@@ -417,7 +435,7 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "objshape_node");
 	objshape objshape_node;
 	ros::Rate loop_rate(10*5);
-	ros::Duration(2).sleep(); // sleep for half a second
+	ros::Duration(2).sleep(); // sleep for 2 seconds
 	while (ros::ok())
 	{
 		ros::spinOnce();
