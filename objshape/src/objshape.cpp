@@ -422,12 +422,16 @@ public:
         //vector along ray
         cv::Mat coordinates = R * invK * imageCoordinates;
 
+        ROS_INFO("ray vector: (%f, %f, %f)", coordinates.at<float>(0, 0), coordinates.at<float>(1, 0), coordinates.at<float>(2, 0));
+
         //compute scale value to get y == 0.03
         double height = 0;
         ros::param::getCached("/calibration/height", height);
 
         double dy = 0.03 + height; //consider height of camera
         double scaler = dy / coordinates.at<float>(1, 0);
+
+        ROS_INFO("scaler: %f", scaler);
 
         //update x + z values
         coordinates.at<float>(0, 0) *= scaler;
