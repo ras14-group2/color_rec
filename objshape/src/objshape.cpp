@@ -6,7 +6,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/opencv.hpp>
 #include <sensor_msgs/Image.h>
-#include <robo_globals.h>
+//#include <robo_globals.h>
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
@@ -101,7 +101,7 @@ public:
 		depth_sub_ = it_.subscribe("camera/depth/image_raw", 1, &objshape::depthCallBack, this);
 		image_pub_ = it_.advertise("/image_converter/output_video", 1);
 		ocv_pub_= n_.advertise<ocv_msgs::ocv>("/ocvrec/data", 1);
-		sound_pub_= n_.advertise<std_msgs::String>("/espeak/string", 1);
+//		sound_pub_= n_.advertise<std_msgs::String>("/espeak/string", 1);
 
 		//	cv::namedWindow(OPENCV_WINDOW);
 	}
@@ -418,7 +418,21 @@ public:
 		R.at<float>(2,1) =  std::sin(-theta_x);
 		R.at<float>(2,2) =  std::cos(-theta_x);
 
-		cv::Mat coordinates = R * invK * distance * imageCoordinates; // Coordinates in the robot space handle by setting y = 0
+        //vector along ray
+        cv::Mat coordinates = R * invK * imageCoordinates;
+
+        //compute scale value to get y == 0.03
+        double height = 0;
+        ros::param::getCached("/calibration/height", height);
+
+        double dy = 0.03 + height; //consider height of camera
+        double scaler = dy / coordinates.at<float>(1, 0);
+
+        //update x + z values
+        coordinates.at<float>(0, 0) *= scaler;
+        coordinates.at<float>(2, 0) *= scaler;
+
+        ROS_INFO("coordinates from RGB: (%f, %f)", coordinates.at<float>(0, 0), coordinates.at<float>(2, 0));
 
 		//std::cout << coordinates<< std::endl;
 		geometry_msgs::Point position;
