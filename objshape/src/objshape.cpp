@@ -103,6 +103,7 @@ public:
 		ocv_pub_= n_.advertise<ocv_msgs::ocv>("/ocvrec/data", 1);
 //		sound_pub_= n_.advertise<std_msgs::String>("/espeak/string", 1);
 
+
 		//	cv::namedWindow(OPENCV_WINDOW);
 	}
 
