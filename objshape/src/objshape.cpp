@@ -20,7 +20,7 @@
 
 
 static const std::string OPENCV_WINDOW = "Image window";
-cv_bridge::CvImagePtr depth_ptr;
+//cv_bridge::CvImagePtr depth_ptr;
 
 /**
  * Helper function to find a cosine of angle between vectors
@@ -59,7 +59,7 @@ class objshape
 	ros::NodeHandle n_;
 	image_transport::ImageTransport it_;
 	image_transport::Subscriber image_sub_;
-	image_transport::Subscriber depth_sub_;
+//	image_transport::Subscriber depth_sub_;
 	image_transport::Publisher image_pub_;
 	ros::Publisher ocv_pub_;
 	ros::Publisher sound_pub_;
@@ -98,7 +98,7 @@ public:
 	{
 		// Subscribe to input video feed and publish output video feed
 		image_sub_ = it_.subscribe("camera/rgb/image_raw", 1, &objshape::imageCb, this); // /camera/image_raw
-		depth_sub_ = it_.subscribe("camera/depth/image_raw", 1, &objshape::depthCallBack, this);
+//		depth_sub_ = it_.subscribe("camera/depth/image_raw", 1, &objshape::depthCallBack, this);
 		image_pub_ = it_.advertise("/image_converter/output_video", 1);
 		ocv_pub_= n_.advertise<ocv_msgs::ocv>("/ocvrec/data", 1);
 //		sound_pub_= n_.advertise<std_msgs::String>("/espeak/string", 1);
@@ -369,25 +369,25 @@ public:
 		// sound_pub_.publish(obj_msgs);
 	}
 
-	// Calculates distance from the camera to the object
-	void depthCallBack(const sensor_msgs::ImageConstPtr& msg)
-	{
-		try
-		{
-			depth_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_32FC1);
+//	// Calculates distance from the camera to the object
+//	void depthCallBack(const sensor_msgs::ImageConstPtr& msg)
+//	{
+//		try
+//		{
+//			depth_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_32FC1);
 
-		}
-		catch (cv_bridge::Exception& e)
-		{
-			ROS_ERROR("cv_bridge exception: %s", e.what());
-			return;
-		}
-	}
+//		}
+//		catch (cv_bridge::Exception& e)
+//		{
+//			ROS_ERROR("cv_bridge exception: %s", e.what());
+//			return;
+//		}
+//	}
 
 	// Calculates the 3D position of the observed object
 	geometry_msgs::Point obj3DPos(int u, int v)
 	{
-		ROS_INFO("image coordinates: (%d, %d)", u, v);
+//		ROS_INFO("image coordinates: (%d, %d)", u, v);
 		cv::Mat imageCoordinates(3,1, cv::DataType<float>::type);
 		imageCoordinates.at<float>(0,0) = u;
 		imageCoordinates.at<float>(1,0) = v;
@@ -395,10 +395,10 @@ public:
 		double theta_x = 0.0;
 		ros::param::getCached("/calibration/x_angle", theta_x);
 
-		ROS_INFO("camera angle: %f", theta_x);
+//		ROS_INFO("camera angle: %f", theta_x);
 		theta_x = -theta_x;
 
-		float distance = depth_ptr->image.at<float>(v,u); // distance from the camera to the object
+//		float distance = depth_ptr->image.at<float>(v,u); // distance from the camera to the object
 		//ROS_INFO("distance = %f", distance);
 
 		cv::Mat invK(3,3, cv::DataType<float>::type);  // inverse matrix of camera intrinsic parameters
@@ -426,7 +426,7 @@ public:
         //vector along ray
         cv::Mat coordinates = R * invK * imageCoordinates;
 
-        ROS_INFO("ray vector: (%f, %f, %f)", coordinates.at<float>(0, 0), coordinates.at<float>(1, 0), coordinates.at<float>(2, 0));
+//        ROS_INFO("ray vector: (%f, %f, %f)", coordinates.at<float>(0, 0), coordinates.at<float>(1, 0), coordinates.at<float>(2, 0));
 
         //compute scale value to get y == 0.03
         double height = 0;
@@ -435,7 +435,7 @@ public:
         double dy = 0.03 - height; //consider height of camera
         double scaler = dy / coordinates.at<float>(1, 0);
 
-        ROS_INFO("scaler: %f", scaler);
+//        ROS_INFO("scaler: %f", scaler);
 
         //update x + z values
         coordinates.at<float>(0, 0) *= -scaler;
