@@ -387,12 +387,16 @@ public:
 	// Calculates the 3D position of the observed object
 	geometry_msgs::Point obj3DPos(int u, int v)
 	{
+		ROS_INFO("image coordinates: (%d, %d)", u, v);
 		cv::Mat imageCoordinates(3,1, cv::DataType<float>::type);
 		imageCoordinates.at<float>(0,0) = u;
 		imageCoordinates.at<float>(1,0) = v;
 		imageCoordinates.at<float>(2,0) = 1;
 		double theta_x = 0.0;
 		ros::param::getCached("/calibration/x_angle", theta_x);
+
+		ROS_INFO("camera angle: %f", theta_x);
+		theta_x = -theta_x;
 
 		float distance = depth_ptr->image.at<float>(v,u); // distance from the camera to the object
 		//ROS_INFO("distance = %f", distance);
@@ -428,14 +432,14 @@ public:
         double height = 0;
         ros::param::getCached("/calibration/height", height);
 
-        double dy = 0.03 + height; //consider height of camera
+        double dy = 0.03 - height; //consider height of camera
         double scaler = dy / coordinates.at<float>(1, 0);
 
         ROS_INFO("scaler: %f", scaler);
 
         //update x + z values
-        coordinates.at<float>(0, 0) *= scaler;
-        coordinates.at<float>(2, 0) *= scaler;
+        coordinates.at<float>(0, 0) *= -scaler;
+        coordinates.at<float>(2, 0) *= -scaler;
 
         ROS_INFO("coordinates from RGB: (%f, %f)", coordinates.at<float>(0, 0), coordinates.at<float>(2, 0));
 
