@@ -445,9 +445,9 @@ public:
 
 		//std::cout << coordinates<< std::endl;
 		geometry_msgs::Point position;
-		position.x = coordinates.at<float>(0,0)/1000; // in meters
+        position.x = coordinates.at<float>(0,0);
 		position.y = 0; // in meters
-		position.z = coordinates.at<float>(2,0)/1000; // in meters
+        position.z = coordinates.at<float>(2,0);
 		return geometry_msgs::Point(position);
 	}
 
