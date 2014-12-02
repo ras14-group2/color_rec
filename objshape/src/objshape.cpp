@@ -17,8 +17,6 @@
 #include <geometry_msgs/Point.h>
 #include <ocv_msgs/ocv.h>
 
-
-
 static const std::string OPENCV_WINDOW = "Image window";
 //cv_bridge::CvImagePtr depth_ptr;
 
@@ -283,6 +281,8 @@ public:
 									msgrec.data = obj.c_str();
 									ocvmgs.shape = msgrec;
 									ocvmgs.position = obj3DPos(posX[i], posY[i]);
+									ocvmgs.header = std_msgs::Header();
+									ocvmgs.header.stamp = msg->header.stamp;
 									ocv_pub_.publish(ocvmgs);
 									cp1++;
 									if(cp1==3)
@@ -339,6 +339,8 @@ public:
 								msgrec.data = obj.c_str();
 								ocvmgs.shape = msgrec;
 								ocvmgs.position = obj3DPos(posX[i], posY[i]);
+								ocvmgs.header = std_msgs::Header();
+								ocvmgs.header.stamp = msg->header.stamp;
 								ocv_pub_.publish(ocvmgs);
 								cp2++;
 								if(cp2==3)
@@ -459,6 +461,7 @@ int main(int argc, char **argv)
 	objshape objshape_node;
 	ros::Rate loop_rate(10*5);
 	ros::Duration(2).sleep(); // sleep for 2 seconds
+
 	while (ros::ok())
 	{
 		ros::spinOnce();
