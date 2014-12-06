@@ -168,3 +168,4 @@ add_executable(objshape_node src/objshape.cpp)
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
