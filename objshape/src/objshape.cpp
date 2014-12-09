@@ -17,6 +17,8 @@
 #include <geometry_msgs/Point.h>
 #include <ocv_msgs/ocv.h>
 
+#define NCOLORS 7
+
 static const std::string OPENCV_WINDOW = "Image window";
 //cv_bridge::CvImagePtr depth_ptr;
 
@@ -66,7 +68,7 @@ private:
 
 public:
 
-	cv::Mat hsv, imgThresholded[6],imgThresholded_new[6], dst;
+	cv::Mat hsv, imgThresholded[NCOLORS],imgThresholded_new[NCOLORS], dst;
 	int iLowH;
 	int iHighH;
 
@@ -76,14 +78,14 @@ public:
 	int iLowV;
 	int iHighV;
 
-	cv::Moments oMoments[6];
+	cv::Moments oMoments[NCOLORS];
 
-	double dM01[6];
-	double dM10[6];
-	double dArea[6];
+	double dM01[NCOLORS];
+	double dM10[NCOLORS];
+	double dArea[NCOLORS];
 
-	int posX[6];
-	int posY[6];
+	int posX[NCOLORS];
+	int posY[NCOLORS];
 
 	int count, cp1, cp2;
 
@@ -112,7 +114,7 @@ public:
 
 	void imageCb(const sensor_msgs::ImageConstPtr& msg)
 	{
-		static const std::string color[] = {"Yellow", "Orange", "Green", "Blue", "Purple", "Red"}; // Colors;
+		static const std::string color[] = {"Yellow", "Orange", "Light Green", "Green", "Blue", "Purple", "Red"}; // Colors;
 		static const std::string shape[] = {"Cube", "Ball", "Cylinder", "Triangle", "Patric", "Cross"}; // Shapes;
 
 		cv_bridge::CvImagePtr cv_ptr;
@@ -134,10 +136,11 @@ public:
 		//		inRange(hsv, cv::Scalar(11, 150, 150), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
 		//		inRange(hsv, cv::Scalar(13, 164, 164), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
 		inRange(hsv, cv::Scalar(0, 170, 170), cv::Scalar(10, 255, 255), imgThresholded_new[1]); //Threshold the image Orange
-		inRange(hsv, cv::Scalar(30, 80, 60), cv::Scalar(89, 255, 255), imgThresholded_new[2]); //Threshold the image Green
-		inRange(hsv, cv::Scalar(90, 29, 60), cv::Scalar(119, 255, 255), imgThresholded_new[3]); //Threshold the image Blue
-		inRange(hsv, cv::Scalar(120, 90, 80), cv::Scalar(160, 255, 255), imgThresholded_new[4]); //Threshold the image Purple
-		inRange(hsv, cv::Scalar(161, 50, 50), cv::Scalar(179, 255, 240), imgThresholded_new[5]); //Threshold the image Red
+		inRange(hsv, cv::Scalar(30, 170, 142), cv::Scalar(50, 255, 255), imgThresholded[2]); //Threshold the image L Green
+		inRange(hsv, cv::Scalar(30, 80, 60), cv::Scalar(89, 255, 255), imgThresholded_new[3]); //Threshold the image Green
+		inRange(hsv, cv::Scalar(90, 29, 60), cv::Scalar(119, 255, 255), imgThresholded_new[4]); //Threshold the image Blue
+		inRange(hsv, cv::Scalar(120, 90, 80), cv::Scalar(160, 255, 255), imgThresholded_new[5]); //Threshold the image Purple
+		inRange(hsv, cv::Scalar(161, 50, 50), cv::Scalar(179, 255, 240), imgThresholded_new[6]); //Threshold the image Red
 
 		// Adds "n" thresholded images for each color in other to fill black blobs
 		if(count < 3)
@@ -259,7 +262,7 @@ public:
 									//ROS_INFO("Position = (%d, %d) \n",posX[i], posY[i] );
 								}
 
-								if(color[i].compare("Green")==0 && obj.compare("Ball")==0)
+								if(color[i].compare("Light Green")==0 && obj.compare("Ball")==0)
 									obj = "Cylinder";
 								//								else if(color[i].compare("Blue")==0 && obj.compare("Triangle")==0)
 								//									obj = "Triangle";
