@@ -89,12 +89,14 @@ public:
 
 	int count, cp1, cp2;
 
+	bool atrium;
+
 	std::string obj, preobj, precolor;
 	std_msgs::String msgrec;
 	ocv_msgs::ocv ocvmgs;
 
 	objshape()
-	: it_(n_), iLowH(0), iHighH(179), iLowS(0), iHighS(255), iLowV(0), iHighV(255), count(0), cp1(0), cp2(0)
+	: it_(n_), iLowH(0), iHighH(179), iLowS(0), iHighS(255), iLowV(0), iHighV(255), count(0), cp1(0), cp2(0), atrium(0)
 	{
 		// Subscribe to input video feed and publish output video feed
 		image_sub_ = it_.subscribe("camera/rgb/image_raw", 1, &objshape::imageCb, this); // /camera/image_raw
@@ -132,16 +134,25 @@ public:
 
 		cv::medianBlur(hsv,hsv,5);
 
-		inRange(hsv, cv::Scalar(11, 107, 212), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
-		//		inRange(hsv, cv::Scalar(11, 150, 150), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
-		//		inRange(hsv, cv::Scalar(13, 164, 164), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
-		inRange(hsv, cv::Scalar(0, 170, 170), cv::Scalar(10, 255, 255), imgThresholded_new[1]); //Threshold the image Orange
-		inRange(hsv, cv::Scalar(30, 170, 142), cv::Scalar(50, 255, 255), imgThresholded[2]); //Threshold the image L Green
-		inRange(hsv, cv::Scalar(30, 80, 60), cv::Scalar(89, 255, 255), imgThresholded_new[3]); //Threshold the image Green
-		inRange(hsv, cv::Scalar(90, 29, 60), cv::Scalar(119, 255, 255), imgThresholded_new[4]); //Threshold the image Blue
-		inRange(hsv, cv::Scalar(120, 90, 80), cv::Scalar(160, 255, 255), imgThresholded_new[5]); //Threshold the image Purple
-		inRange(hsv, cv::Scalar(161, 50, 50), cv::Scalar(179, 255, 240), imgThresholded_new[6]); //Threshold the image Red
-
+		if(atrium){
+			inRange(hsv, cv::Scalar(11, 107, 212), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
+			//		inRange(hsv, cv::Scalar(11, 150, 150), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
+			//		inRange(hsv, cv::Scalar(13, 164, 164), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
+			inRange(hsv, cv::Scalar(0, 170, 170), cv::Scalar(10, 255, 255), imgThresholded_new[1]); //Threshold the image Orange
+			inRange(hsv, cv::Scalar(30, 170, 142), cv::Scalar(50, 255, 255), imgThresholded[2]); //Threshold the image L Green
+			inRange(hsv, cv::Scalar(30, 80, 60), cv::Scalar(89, 255, 255), imgThresholded_new[3]); //Threshold the image Green
+			inRange(hsv, cv::Scalar(90, 29, 60), cv::Scalar(119, 255, 255), imgThresholded_new[4]); //Threshold the image Blue
+			inRange(hsv, cv::Scalar(120, 90, 80), cv::Scalar(160, 255, 255), imgThresholded_new[5]); //Threshold the image Purple
+			inRange(hsv, cv::Scalar(161, 50, 50), cv::Scalar(179, 255, 240), imgThresholded_new[6]); //Threshold the image Red
+		}else{
+			inRange(hsv, cv::Scalar(11, 100, 200), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
+			inRange(hsv, cv::Scalar(0, 133, 133), cv::Scalar(10, 255, 255), imgThresholded_new[1]); //Threshold the image Orange
+			inRange(hsv, cv::Scalar(30, 30, 170), cv::Scalar(50, 255, 255), imgThresholded[2]); //Threshold the image L Green
+			inRange(hsv, cv::Scalar(30, 70, 70), cv::Scalar(89, 255, 255), imgThresholded_new[3]); //Threshold the image Green
+			inRange(hsv, cv::Scalar(90, 70, 70), cv::Scalar(119, 255, 255), imgThresholded_new[4]); //Threshold the image Blue
+			inRange(hsv, cv::Scalar(120, 70, 70), cv::Scalar(160, 255, 255), imgThresholded_new[5]); //Threshold the image Purple
+			inRange(hsv, cv::Scalar(161, 40, 40), cv::Scalar(179, 255, 240), imgThresholded_new[6]); //Threshold the image Red OBTAIN BETTER HSV!!!
+		}
 		// Adds "n" thresholded images for each color in other to fill black blobs
 		if(count < 3)
 		{
