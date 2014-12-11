@@ -46,8 +46,10 @@ public:
 	int posX[8];
 	int posY[8];
 
+	bool atrium;
+
 	objcolor()
-	: it_(n_), iLowH(0), iHighH(179), iLowS(0), iHighS(255), iLowV(0), iHighV(255)
+	: it_(n_), iLowH(0), iHighH(179), iLowS(0), iHighS(255), iLowV(0), iHighV(255), atrium(true)
 	{
 		// Subscribe to input video feed and publish output video feed
 		image_sub_ = it_.subscribe("camera/rgb/image_raw", 1, &objcolor::imageCb, this); // /camera/image_raw
@@ -79,16 +81,36 @@ public:
 		cvtColor(cv_ptr->image, hsv, CV_BGR2HSV);
 
 
-		inRange(hsv, cv::Scalar(17, 140, 200), cv::Scalar(38, 255, 255), imgThresholded[0]); //Threshold the image Yellow
-		inRange(hsv, cv::Scalar(0, 130, 200), cv::Scalar(16, 255, 255), imgThresholded[1]); //Threshold the image Orange
-		inRange(hsv, cv::Scalar(30, 170, 142), cv::Scalar(50, 255, 255), imgThresholded[2]); //Threshold the image L Green
-		inRange(hsv, cv::Scalar(40, 110, 80), cv::Scalar(75, 255, 140), imgThresholded[3]); //Threshold the image Green
-		inRange(hsv, cv::Scalar(90, 110, 150), cv::Scalar(110, 230, 230), imgThresholded[4]); //Threshold the image L Blue
-		inRange(hsv, cv::Scalar(105, 100, 80), cv::Scalar(115, 180, 165), imgThresholded[5]); //Threshold the image Blue
-		inRange(hsv, cv::Scalar(120, 90, 80), cv::Scalar(160, 255, 255), imgThresholded[6]); //Threshold the image Purple
-		inRange(hsv, cv::Scalar(169, 255, 110), cv::Scalar(179, 255, 255), imgThresholded[7]); //Threshold the image Red
+		if(atrium){
+			inRange(hsv, cv::Scalar(11, 130, 180), cv::Scalar(29, 255, 255), imgThresholded[0]); //Threshold the image Yellow
+			inRange(hsv, cv::Scalar(0, 255, 130), cv::Scalar(10, 255, 170), imgThresholded[1]); //Threshold the image Orange
+			inRange(hsv, cv::Scalar(30, 130, 110), cv::Scalar(50, 255, 255), imgThresholded[2]); //Threshold the image L Green
+			inRange(hsv, cv::Scalar(30, 70, 70), cv::Scalar(89, 255, 255), imgThresholded[3]); //Threshold the image Green
+			inRange(hsv, cv::Scalar(90, 70, 70), cv::Scalar(119, 255, 255), imgThresholded[4]); //Threshold the image Blue
+			inRange(hsv, cv::Scalar(120, 70, 70), cv::Scalar(160, 255, 255), imgThresholded[5]); //Threshold the image Purple
+			inRange(hsv, cv::Scalar(0, 255, 60), cv::Scalar(0, 255, 130), imgThresholded[6]); //Threshold the image Red
+		}else{
+			/*inRange(hsv, cv::Scalar(17, 140, 200), cv::Scalar(38, 255, 255), imgThresholded[0]); //Threshold the image Yellow
+			inRange(hsv, cv::Scalar(0, 130, 200), cv::Scalar(16, 255, 255), imgThresholded[1]); //Threshold the image Orange
+			inRange(hsv, cv::Scalar(30, 170, 142), cv::Scalar(50, 255, 255), imgThresholded[2]); //Threshold the image L Green
+			inRange(hsv, cv::Scalar(40, 110, 80), cv::Scalar(75, 255, 140), imgThresholded[3]); //Threshold the image Green
+			inRange(hsv, cv::Scalar(90, 110, 150), cv::Scalar(110, 230, 230), imgThresholded[4]); //Threshold the image L Blue
+			inRange(hsv, cv::Scalar(105, 100, 80), cv::Scalar(115, 180, 165), imgThresholded[5]); //Threshold the image Blue
+			inRange(hsv, cv::Scalar(120, 90, 80), cv::Scalar(160, 255, 255), imgThresholded[6]); //Threshold the image Purple
+			inRange(hsv, cv::Scalar(169, 255, 110), cv::Scalar(179, 255, 255), imgThresholded[7]); //Threshold the image Red*/
 
-		for(int i=0; i<8 ; i++){
+			inRange(hsv, cv::Scalar(11, 107, 212), cv::Scalar(29, 255, 255), imgThresholded[0]); //Threshold the image Yellow
+			//		inRange(hsv, cv::Scalar(11, 150, 150), cv::Scalar(29, 255, 255), imgThresholded[0]); //Threshold the image Yellow
+			//		inRange(hsv, cv::Scalar(13, 164, 164), cv::Scalar(29, 255, 255), imgThresholded[0]); //Threshold the image Yellow
+			inRange(hsv, cv::Scalar(0, 170, 170), cv::Scalar(10, 255, 255), imgThresholded[1]); //Threshold the image Orange
+			inRange(hsv, cv::Scalar(30, 170, 142), cv::Scalar(50, 255, 255), imgThresholded[2]); //Threshold the image L Green
+			inRange(hsv, cv::Scalar(30, 80, 60), cv::Scalar(89, 255, 255), imgThresholded[3]); //Threshold the image Green
+			inRange(hsv, cv::Scalar(90, 29, 60), cv::Scalar(119, 255, 255), imgThresholded[4]); //Threshold the image Blue
+			inRange(hsv, cv::Scalar(120, 90, 80), cv::Scalar(160, 255, 255), imgThresholded[5]); //Threshold the image Purple
+			inRange(hsv, cv::Scalar(161, 50, 50), cv::Scalar(179, 255, 240), imgThresholded[6]); //Threshold the image Red
+		}
+
+		for(int i=0; i<7 ; i++){
 
 			//morphological opening (removes small objects from the foreground)
 			erode(imgThresholded[i], imgThresholded[i], getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)) );

@@ -17,7 +17,7 @@
 #include <geometry_msgs/Point.h>
 #include <ocv_msgs/ocv.h>
 
-#define NCOLORS 7
+#define NCOLORS 8
 
 static const std::string OPENCV_WINDOW = "Image window";
 //cv_bridge::CvImagePtr depth_ptr;
@@ -59,7 +59,7 @@ class objshape
 	ros::NodeHandle n_;
 	image_transport::ImageTransport it_;
 	image_transport::Subscriber image_sub_;
-//	image_transport::Subscriber depth_sub_;
+	//	image_transport::Subscriber depth_sub_;
 	image_transport::Publisher image_pub_;
 	ros::Publisher ocv_pub_;
 	ros::Publisher sound_pub_;
@@ -91,19 +91,19 @@ public:
 
 	bool atrium;
 
-	std::string obj, preobj, precolor;
+	std::string obj, preobj, precolor, colour;
 	std_msgs::String msgrec;
 	ocv_msgs::ocv ocvmgs;
 
 	objshape()
-	: it_(n_), iLowH(0), iHighH(179), iLowS(0), iHighS(255), iLowV(0), iHighV(255), count(0), cp1(0), cp2(0), atrium(0)
+	: it_(n_), iLowH(0), iHighH(179), iLowS(0), iHighS(255), iLowV(0), iHighV(255), count(0), cp1(0), cp2(0), atrium(true)
 	{
 		// Subscribe to input video feed and publish output video feed
 		image_sub_ = it_.subscribe("camera/rgb/image_raw", 1, &objshape::imageCb, this); // /camera/image_raw
-//		depth_sub_ = it_.subscribe("camera/depth/image_raw", 1, &objshape::depthCallBack, this);
+		//		depth_sub_ = it_.subscribe("camera/depth/image_raw", 1, &objshape::depthCallBack, this);
 		image_pub_ = it_.advertise("/image_converter/output_video", 1);
 		ocv_pub_= n_.advertise<ocv_msgs::ocv>("/ocvrec/data", 1);
-//		sound_pub_= n_.advertise<std_msgs::String>("/espeak/string", 1);
+		//		sound_pub_= n_.advertise<std_msgs::String>("/espeak/string", 1);
 
 
 		//	cv::namedWindow(OPENCV_WINDOW);
@@ -116,7 +116,7 @@ public:
 
 	void imageCb(const sensor_msgs::ImageConstPtr& msg)
 	{
-		static const std::string color[] = {"Yellow", "Orange", "Light Green", "Green", "Blue", "Purple", "Red"}; // Colors;
+		static const std::string color[] = {"Yellow", "Orange", "Light Green", "Green", "Blue", "Purple","Bad Orange", "Red"}; // Colors;
 		static const std::string shape[] = {"Cube", "Ball", "Cylinder", "Triangle", "Patric", "Cross"}; // Shapes;
 
 		cv_bridge::CvImagePtr cv_ptr;
@@ -135,34 +135,49 @@ public:
 		cv::medianBlur(hsv,hsv,5);
 
 		if(atrium){
+			inRange(hsv, cv::Scalar(11, 130, 130), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
+			inRange(hsv, cv::Scalar(0, 255, 130), cv::Scalar(10, 255, 170), imgThresholded_new[1]); //Threshold the image Orange
+			inRange(hsv, cv::Scalar(30, 130, 110), cv::Scalar(50, 255, 255), imgThresholded_new[2]); //Threshold the image L Green
+			inRange(hsv, cv::Scalar(51, 70, 70), cv::Scalar(89, 255, 255), imgThresholded_new[3]); //Threshold the image Green
+			inRange(hsv, cv::Scalar(90, 70, 70), cv::Scalar(119, 255, 255), imgThresholded_new[4]); //Threshold the image Blue
+			inRange(hsv, cv::Scalar(120, 70, 70), cv::Scalar(160, 255, 255), imgThresholded_new[5]); //Threshold the image Purple
+			inRange(hsv, cv::Scalar(0, 255, 150), cv::Scalar(10, 255, 160), imgThresholded_new[6]); //Threshold the image Bad Orange
+																																															//for extrac color from red image
+			inRange(hsv, cv::Scalar(0, 255, 80), cv::Scalar(179, 255, 210), imgThresholded_new[7]); //Threshold the image Red
+			ROS_INFO("ATRIUM!!!!");
+		}else{
 			inRange(hsv, cv::Scalar(11, 107, 212), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
 			//		inRange(hsv, cv::Scalar(11, 150, 150), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
 			//		inRange(hsv, cv::Scalar(13, 164, 164), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
 			inRange(hsv, cv::Scalar(0, 170, 170), cv::Scalar(10, 255, 255), imgThresholded_new[1]); //Threshold the image Orange
-			inRange(hsv, cv::Scalar(30, 170, 142), cv::Scalar(50, 255, 255), imgThresholded[2]); //Threshold the image L Green
-			inRange(hsv, cv::Scalar(30, 80, 60), cv::Scalar(89, 255, 255), imgThresholded_new[3]); //Threshold the image Green
+			inRange(hsv, cv::Scalar(30, 170, 142), cv::Scalar(50, 255, 255), imgThresholded_new[2]); //Threshold the image L Green
+			inRange(hsv, cv::Scalar(51, 80, 60), cv::Scalar(89, 255, 255), imgThresholded_new[3]); //Threshold the image Green
 			inRange(hsv, cv::Scalar(90, 29, 60), cv::Scalar(119, 255, 255), imgThresholded_new[4]); //Threshold the image Blue
 			inRange(hsv, cv::Scalar(120, 90, 80), cv::Scalar(160, 255, 255), imgThresholded_new[5]); //Threshold the image Purple
-			inRange(hsv, cv::Scalar(161, 50, 50), cv::Scalar(179, 255, 240), imgThresholded_new[6]); //Threshold the image Red
-		}else{
-			inRange(hsv, cv::Scalar(11, 100, 200), cv::Scalar(29, 255, 255), imgThresholded_new[0]); //Threshold the image Yellow
-			inRange(hsv, cv::Scalar(0, 133, 133), cv::Scalar(10, 255, 255), imgThresholded_new[1]); //Threshold the image Orange
-			inRange(hsv, cv::Scalar(30, 30, 170), cv::Scalar(50, 255, 255), imgThresholded[2]); //Threshold the image L Green
-			inRange(hsv, cv::Scalar(30, 70, 70), cv::Scalar(89, 255, 255), imgThresholded_new[3]); //Threshold the image Green
-			inRange(hsv, cv::Scalar(90, 70, 70), cv::Scalar(119, 255, 255), imgThresholded_new[4]); //Threshold the image Blue
-			inRange(hsv, cv::Scalar(120, 70, 70), cv::Scalar(160, 255, 255), imgThresholded_new[5]); //Threshold the image Purple
-			inRange(hsv, cv::Scalar(161, 40, 40), cv::Scalar(179, 255, 240), imgThresholded_new[6]); //Threshold the image Red OBTAIN BETTER HSV!!!
+			inRange(hsv, cv::Scalar(0, 255, 150), cv::Scalar(10, 255, 160), imgThresholded_new[6]); //Threshold the image Bad Orange
+			inRange(hsv, cv::Scalar(161, 50, 50), cv::Scalar(179, 255, 240), imgThresholded_new[7]); //Threshold the image Red
+			ROS_INFO("NOT ATRIUM!!!!");
 		}
 		// Adds "n" thresholded images for each color in other to fill black blobs
 		if(count < 3)
 		{
-			for(int i=0; i<6 ; i++)
+			for(int i=0; i<NCOLORS ; i++)
 			{
 				if(count==0)
 				{
 					imgThresholded[i] = imgThresholded_new[i];
 				}else{
 					cv::add(imgThresholded_new[i], imgThresholded[i], imgThresholded[i]);
+				}
+				if(atrium){ // Operation to remove all colors from red thresholded image in order to have only red objects
+					if(i==7){
+						cv::subtract(imgThresholded[7],imgThresholded[5],imgThresholded[7]);
+						cv::subtract(imgThresholded[7],imgThresholded[4],imgThresholded[7]);
+						cv::subtract(imgThresholded[7],imgThresholded[3],imgThresholded[7]);
+						cv::subtract(imgThresholded[7],imgThresholded[2],imgThresholded[7]);
+						cv::subtract(imgThresholded[7],imgThresholded[6],imgThresholded[7]);
+						cv::subtract(imgThresholded[7],imgThresholded[0],imgThresholded[7]);
+					}
 				}
 			}
 			count++;
@@ -174,7 +189,7 @@ public:
 		{
 			count = 0;
 
-			for(int i=0; i<6 ; i++){
+			for(int i=0; i<NCOLORS ; i++){
 
 				// Find contours
 				std::vector<std::vector<cv::Point> > contours;
@@ -273,8 +288,10 @@ public:
 									//ROS_INFO("Position = (%d, %d) \n",posX[i], posY[i] );
 								}
 
-								if(color[i].compare("Light Green")==0 && obj.compare("Ball")==0)
+								if(color[i].compare("Light Green")==0 && (obj.compare("Ball")==0 || obj.compare("Cube")==0)){
+									colour = "Green";
 									obj = "Cylinder";
+								}
 								//								else if(color[i].compare("Blue")==0 && obj.compare("Triangle")==0)
 								//									obj = "Triangle";
 								else if(obj.compare("Triangle")==0 && color[i].compare("Blue") != 0)
@@ -286,11 +303,18 @@ public:
 								// only if the object or color is different from the previous detected
 								// cp1 is used to publish messages maximum 3 consecutive times
 								if(preobj.compare(obj.c_str())!=0 || precolor.compare(color[i].c_str())!=0 || cp1<3){
-									//ROS_INFO("Object detected = %s \n", (color[i]+' '+obj).c_str());
 									preobj = obj; //previous object
 									precolor = color[i]; //previous color
 									//publish messages color, shape and position
-									msgrec.data = color[i].c_str();
+									if(colour.compare("Green")==0){
+										colour = "Green";
+										msgrec.data = colour.c_str();
+										ROS_INFO("Object detected = %s \n", (colour+' '+obj).c_str());
+										colour = "";
+									}else{
+										msgrec.data = color[i].c_str();
+										ROS_INFO("Object detected = %s \n", (color[i]+' '+obj).c_str());
+									}
 									ocvmgs.color = msgrec;
 									msgrec.data = obj.c_str();
 									ocvmgs.shape = msgrec;
@@ -307,6 +331,8 @@ public:
 							}
 						}
 					}//end of loop over all contours
+				}else if(color[i].compare("Bad Orange") == 0){
+
 				}
 				else //-->(color[i].compare("Orange") == 0 || color[i].compare("Purple") == 0)
 				{
@@ -316,7 +342,7 @@ public:
 					dM01[i] = oMoments[i].m01;
 					dM10[i] = oMoments[i].m10;
 					dArea[i] = oMoments[i].m00;
-
+					//ROS_INFO("Area = %f",dArea[1]);
 					if (dArea[i] > 650000 && dArea[i] < 10000000)
 					{
 						//calculate the position of the object
@@ -344,7 +370,7 @@ public:
 							// only if the object or color is different from the previous detected
 							// cp2 is used to publish messages from same object maximum 3 consecutive times
 							if(preobj.compare(obj.c_str())!=0 || precolor.compare(color[i].c_str())!=0 || cp2<3){
-								//ROS_INFO("Object detected = %s \n", (color[i]+' '+obj).c_str());
+								ROS_INFO("Object detected = %s \n", (color[i]+' '+obj).c_str());
 								preobj = obj; //previous object
 								precolor = color[i]; //previous color
 								//publish messages color, shape and position
@@ -373,10 +399,10 @@ public:
 		//cv::imshow(OPENCV_WINDOW, cv_ptr->image);
 		//cv::imwrite( "/home/carlos/Pictures/cali.png", cv_ptr->image );
 		//cv::imshow("HSV",hsv);
-		//cv::imshow("dst",dst);
-		//cv::imshow("Orange",imgThresholded[1]);
-		//cv::imshow("Purple",imgThresholded[4]);
-		//cv::waitKey(3);
+		cv::imshow("dst",dst);
+		//cv::imshow("Red",imgThresholded[7]);
+		//cv::imshow("Yellow",imgThresholded[0]);
+		cv::waitKey(3);
 
 		// Output modified video stream
 		// image_pub_.publish(cv_ptr->toImageMsg());
@@ -385,25 +411,25 @@ public:
 		// sound_pub_.publish(obj_msgs);
 	}
 
-//	// Calculates distance from the camera to the object
-//	void depthCallBack(const sensor_msgs::ImageConstPtr& msg)
-//	{
-//		try
-//		{
-//			depth_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_32FC1);
+	//	// Calculates distance from the camera to the object
+	//	void depthCallBack(const sensor_msgs::ImageConstPtr& msg)
+	//	{
+	//		try
+	//		{
+	//			depth_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_32FC1);
 
-//		}
-//		catch (cv_bridge::Exception& e)
-//		{
-//			ROS_ERROR("cv_bridge exception: %s", e.what());
-//			return;
-//		}
-//	}
+	//		}
+	//		catch (cv_bridge::Exception& e)
+	//		{
+	//			ROS_ERROR("cv_bridge exception: %s", e.what());
+	//			return;
+	//		}
+	//	}
 
 	// Calculates the 3D position of the observed object
 	geometry_msgs::Point obj3DPos(int u, int v)
 	{
-//		ROS_INFO("image coordinates: (%d, %d)", u, v);
+		//		ROS_INFO("image coordinates: (%d, %d)", u, v);
 		cv::Mat imageCoordinates(3,1, cv::DataType<float>::type);
 		imageCoordinates.at<float>(0,0) = u;
 		imageCoordinates.at<float>(1,0) = v;
@@ -411,10 +437,10 @@ public:
 		double theta_x = 0.0;
 		ros::param::getCached("/calibration/x_angle", theta_x);
 
-//		ROS_INFO("camera angle: %f", theta_x);
+		//		ROS_INFO("camera angle: %f", theta_x);
 		theta_x = -theta_x;
 
-//		float distance = depth_ptr->image.at<float>(v,u); // distance from the camera to the object
+		//		float distance = depth_ptr->image.at<float>(v,u); // distance from the camera to the object
 		//ROS_INFO("distance = %f", distance);
 
 		cv::Mat invK(3,3, cv::DataType<float>::type);  // inverse matrix of camera intrinsic parameters
@@ -439,31 +465,31 @@ public:
 		R.at<float>(2,1) =  std::sin(-theta_x);
 		R.at<float>(2,2) =  std::cos(-theta_x);
 
-        //vector along ray
-        cv::Mat coordinates = R * invK * imageCoordinates;
+		//vector along ray
+		cv::Mat coordinates = R * invK * imageCoordinates;
 
-//        ROS_INFO("ray vector: (%f, %f, %f)", coordinates.at<float>(0, 0), coordinates.at<float>(1, 0), coordinates.at<float>(2, 0));
+		//        ROS_INFO("ray vector: (%f, %f, %f)", coordinates.at<float>(0, 0), coordinates.at<float>(1, 0), coordinates.at<float>(2, 0));
 
-        //compute scale value to get y == 0.03
-        double height = 0;
-        ros::param::getCached("/calibration/height", height);
+		//compute scale value to get y == 0.03
+		double height = 0;
+		ros::param::getCached("/calibration/height", height);
 
-        double dy = 0.03 - height; //consider height of camera
-        double scaler = dy / coordinates.at<float>(1, 0);
+		double dy = 0.03 - height; //consider height of camera
+		double scaler = dy / coordinates.at<float>(1, 0);
 
-//        ROS_INFO("scaler: %f", scaler);
+		//        ROS_INFO("scaler: %f", scaler);
 
-        //update x + z values
-        coordinates.at<float>(0, 0) *= -scaler;
-        coordinates.at<float>(2, 0) *= -scaler;
+		//update x + z values
+		coordinates.at<float>(0, 0) *= -scaler;
+		coordinates.at<float>(2, 0) *= -scaler;
 
-        ROS_INFO("coordinates from RGB: (%f, %f)", coordinates.at<float>(0, 0), coordinates.at<float>(2, 0));
+		//        ROS_INFO("coordinates from RGB: (%f, %f)", coordinates.at<float>(0, 0), coordinates.at<float>(2, 0));
 
 		//std::cout << coordinates<< std::endl;
 		geometry_msgs::Point position;
-        position.x = coordinates.at<float>(0,0);
+		position.x = coordinates.at<float>(0,0);
 		position.y = 0; // in meters
-        position.z = coordinates.at<float>(2,0);
+		position.z = coordinates.at<float>(2,0);
 		return geometry_msgs::Point(position);
 	}
 
@@ -473,7 +499,7 @@ int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "objshape_node");
 	objshape objshape_node;
-	ros::Rate loop_rate(10*5);
+	ros::Rate loop_rate(10*3);
 	ros::Duration(2).sleep(); // sleep for 2 seconds
 
 	while (ros::ok())
