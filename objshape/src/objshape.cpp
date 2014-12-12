@@ -399,10 +399,10 @@ public:
 		//cv::imshow(OPENCV_WINDOW, cv_ptr->image);
 		//cv::imwrite( "/home/carlos/Pictures/cali.png", cv_ptr->image );
 		//cv::imshow("HSV",hsv);
-		cv::imshow("dst",dst);
+		//cv::imshow("dst",dst);
 		//cv::imshow("Red",imgThresholded[7]);
 		//cv::imshow("Yellow",imgThresholded[0]);
-		cv::waitKey(3);
+		//cv::waitKey(3);
 
 		// Output modified video stream
 		// image_pub_.publish(cv_ptr->toImageMsg());
